@@ -1,23 +1,26 @@
-const Promise = require('bluebird');
-const bunyan = require('bunyan');
-const {expect} = require('chai');
-const sinon = require('sinon');
+import winston from 'winston';
+import { expect } from 'chai';
+import sinon from 'sinon';
+import _cmd from '../../../src/commands/registration/cdup.js';
 
 const CMD = 'CDUP';
+let log = winston.createLogger({
+  name: CMD,
+  format: winston.format.simple(),
+  transports: [new winston.transports.Console({ level: 'silly' })]
+});
 describe(CMD, function () {
   let sandbox;
-  let log = bunyan.createLogger({name: CMD});
   const mockClient = {
     reply: () => Promise.resolve(),
     fs: {
       chdir: () => Promise.resolve()
     }
   };
-  const cmdFn = require(`../../../src/commands/registration/${CMD.toLowerCase()}`).handler.bind(mockClient);
+  const cmdFn = _cmd.handler.bind(mockClient);
 
   beforeEach(() => {
-    sandbox = sinon.sandbox.create().usingPromise(Promise);
-
+    sandbox = sinon.createSandbox();
     sandbox.spy(mockClient, 'reply');
     sandbox.spy(mockClient.fs, 'chdir');
   });

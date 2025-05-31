@@ -1,13 +1,11 @@
-const _ = require('lodash');
-
-module.exports = {
+export default {
   directive: 'FEAT',
-  handler: function () {
-    const registry = require('../registry');
+  handler: async function () {
+    const registry = (await import('../registry.js')).default;
     const features = Object.keys(registry)
       .reduce((feats, cmd) => {
-        const feat = _.get(registry[cmd], 'flags.feat', null);
-        if (feat) return _.concat(feats, feat);
+        const feat = registry[cmd]?.flags?.feat ?? null;
+        if (feat) return feats.concat(feat);
         return feats;
       }, ['UTF8'])
       .sort()

@@ -1,5 +1,6 @@
-const {expect} = require('chai');
-const sinon = require('sinon');
+import { expect } from 'chai';
+import sinon from 'sinon';
+import _cmd from '../../../src/commands/registration/quit.js';
 
 const CMD = 'QUIT';
 describe(CMD, function () {
@@ -7,10 +8,10 @@ describe(CMD, function () {
   const mockClient = {
     close: () => {}
   };
-  const cmdFn = require(`../../../src/commands/registration/${CMD.toLowerCase()}`).handler.bind(mockClient);
+  const cmdFn = _cmd.handler.bind(mockClient);
 
   beforeEach(() => {
-    sandbox = sinon.sandbox.create().usingPromise(Promise);
+    sandbox = sinon.createSandbox();
 
     sandbox.stub(mockClient, 'close').resolves();
   });

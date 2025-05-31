@@ -1,18 +1,21 @@
-const _ = require('lodash');
+let registryRef;
 
-module.exports = {
+const help = {
   directive: 'HELP',
   handler: function ({command} = {}) {
-    const registry = require('../registry');
-    const directive = _.upperCase(command.arg);
+    const directive = (command.arg || '').toUpperCase();
     if (directive) {
-      if (!registry.hasOwnProperty(directive)) return this.reply(502, `Unknown command ${directive}.`);
+      if (!Object.prototype.hasOwnProperty.call(registryRef, directive)) return this.reply(502, `Unknown command ${directive}.`);
 
-      const {syntax, description} = registry[directive];
-      const reply = _.concat([syntax.replace('{{cmd}}', directive), description]);
+      const {syntax, description} = registryRef[directive];
+      const reply = [syntax.replace('{{cmd}}', directive), description];
       return this.reply(214, ...reply);
     } else {
-      const supportedCommands = _.chunk(Object.keys(registry), 5).map((chunk) => chunk.join('\t'));
+      const keys = Object.keys(registryRef);
+      const supportedCommands = [];
+      for (let i = 0; i < keys.length; i += 5) {
+        supportedCommands.push(keys.slice(i, i + 5).join('\t'));
+      }
       return this.reply(211, 'Supported commands:', ...supportedCommands, 'Use "HELP [command]" for syntax help.');
     }
   },
@@ -22,3 +25,9 @@ module.exports = {
     no_auth: true
   }
 };
+
+export function setHelpRegistry(registry) {
+  registryRef = registry;
+}
+
+export default help;

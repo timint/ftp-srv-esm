@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   directive: 'TYPE',
   handler: function ({command} = {}) {
     if (/^A[0-9]?$/i.test(command.arg)) {

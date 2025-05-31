@@ -1,4 +1,3 @@
-
 class GeneralError extends Error {
   constructor(message, code = 400) {
     super(message);
@@ -31,10 +30,21 @@ class ConnectorError extends Error {
   }
 }
 
+class TimeoutError extends Error {
+  constructor(message, code = 425) {
+    super(message);
+    this.code = code;
+    this.name = 'TimeoutError';
+  }
+}
 
-module.exports = {
+const errors = {
   SocketError,
   FileSystemError,
   ConnectorError,
-  GeneralError
+  GeneralError,
+  TimeoutError
 };
+
+export default errors;
+export { SocketError, FileSystemError, ConnectorError, GeneralError, TimeoutError };

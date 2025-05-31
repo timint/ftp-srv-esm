@@ -1,9 +1,9 @@
-const {handler: dele} = require('./dele');
+import dele from './dele.js';
 
-module.exports = {
+export default {
   directive: ['RMD', 'XRMD'],
   handler: function (args) {
-    return dele.call(this, args);
+    return dele.handler.call(this, args);
   },
   syntax: '{{cmd}} <path>',
   description: 'Remove a directory'

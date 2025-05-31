@@ -1,14 +1,12 @@
 #!/usr/bin/env node
 
-const yargs = require('yargs');
-const path = require('path');
+import yargs from 'yargs';
+import nodePath from 'path';
+import FtpSrv from '../src/index.js';
+import * as errors from '../src/errors.js';
+import { createRequire } from 'module';
 
-const FtpSrv = require('../src');
-const errors = require('../src/errors');
-
-const args = setupYargs();
-const state = setupState(args);
-startFtpServer(state);
+const require = createRequire(import.meta.url);
 
 function setupYargs() {
   return yargs
@@ -40,7 +38,7 @@ function setupYargs() {
     .option('pasv-url', {
       describe: 'URL to provide for passive connections',
       type: 'string',
-      alias: 'pasv_url'
+      alias: 'pasv_hostname'
     })
     .option('pasv-min', {
       describe: 'Starting point to use when creating passive connections',
@@ -61,10 +59,10 @@ function setupState(_args) {
   const _state = {};
 
   function setupOptions() {
-    if (_args._ && _args._.length > 0) {
+    if (Array.isArray(_args._) && _args._.length > 0) {
       _state.url = _args._[0];
     }
-    _state.pasv_url = _args.pasv_url;
+    _state.pasv_hostname = _args.pasv_hostname;
     _state.pasv_min = _args.pasv_min;
     _state.pasv_max = _args.pasv_max;
     _state.anonymous = _args.username === '';
@@ -90,9 +88,16 @@ function setupState(_args) {
     };
 
     if (_args.credentials) {
-      const credentialsFile = path.resolve(_args.credentials);
-      const credentials = require(credentialsFile);
-
+      const credentialsFile = nodePath.resolve(_args.credentials);
+      let credentials;
+      try {
+        // Synchronously require the credentials file (must be CommonJS or .json)
+        credentials = require(credentialsFile);
+        if (credentials.default) credentials = credentials.default;
+      } catch (err) {
+        console.error(`Failed to load credentials file: ${credentialsFile}`);
+        throw err;
+      }
       for (const cred of credentials) {
         setCredentials(cred.username, cred.password, cred.root);
       }
@@ -132,7 +137,7 @@ function startFtpServer(_state) {
 
   const ftpServer = new FtpSrv({
     url: _state.url,
-    pasv_url: _state.pasv_url,
+    pasv_hostname: _state.pasv_hostname,
     pasv_min: _state.pasv_min,
     pasv_max: _state.pasv_max,
     anonymous: _state.anonymous,
@@ -142,3 +147,7 @@ function startFtpServer(_state) {
   ftpServer.on('login', checkLogin);
   ftpServer.listen();
 }
+
+const args = setupYargs();
+const state = setupState(args);
+startFtpServer(state);

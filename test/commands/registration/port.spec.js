@@ -1,8 +1,7 @@
-const Promise = require('bluebird');
-const {expect} = require('chai');
-const sinon = require('sinon');
-
-const ActiveConnector = require('../../../src/connector/active');
+import { expect } from 'chai';
+import sinon from 'sinon';
+import ActiveConnector from '../../../src/connector/active.js';
+import _cmd from '../../../src/commands/registration/port.js';
 
 const CMD = 'PORT';
 describe(CMD, function () {
@@ -10,10 +9,10 @@ describe(CMD, function () {
   const mockClient = {
     reply: () => Promise.resolve()
   };
-  const cmdFn = require(`../../../src/commands/registration/${CMD.toLowerCase()}`).handler.bind(mockClient);
+  const cmdFn = _cmd.handler.bind(mockClient);
 
   beforeEach(() => {
-    sandbox = sinon.sandbox.create().usingPromise(Promise);
+    sandbox = sinon.createSandbox();
 
     sandbox.spy(mockClient, 'reply');
     sandbox.stub(ActiveConnector.prototype, 'setupConnection').resolves();

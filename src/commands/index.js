@@ -1,7 +1,4 @@
-const _ = require('lodash');
-const Promise = require('bluebird');
-
-const REGISTRY = require('./registry');
+import REGISTRY from './registry.js';
 
 const CMD_FLAG_REGEX = new RegExp(/^-(\w{1})$/);
 
@@ -9,14 +6,18 @@ class FtpCommands {
   constructor(connection) {
     this.connection = connection;
     this.previousCommand = {};
-    this.blacklist = _.get(this.connection, 'server.options.blacklist', []).map((cmd) => _.upperCase(cmd));
-    this.whitelist = _.get(this.connection, 'server.options.whitelist', []).map((cmd) => _.upperCase(cmd));
+    this.blacklist = (connection?.server?.options?.blacklist ?? []).map((cmd) =>
+      typeof cmd === 'string' ? cmd.replace(/[_-]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase()).toUpperCase() : cmd
+    );
+    this.whitelist = (connection?.server?.options?.whitelist ?? []).map((cmd) =>
+      typeof cmd === 'string' ? cmd.replace(/[_-]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase()).toUpperCase() : cmd
+    );
   }
 
   parse(message) {
     const strippedMessage = message.replace(/"/g, '');
     let [directive, ...args] = strippedMessage.split(' ');
-    directive = _.chain(directive).trim().toUpper().value();
+    directive = directive.trim().toUpperCase();
 
     const parseCommandFlags = !['RETR', 'SIZE', 'STOR'].includes(directive);
     const params = args.reduce(({arg, flags}, param) => {
@@ -38,26 +39,26 @@ class FtpCommands {
     if (typeof command === 'string') command = this.parse(command);
 
     // Obfuscate password from logs
-    const logCommand = _.clone(command);
+    const logCommand = { ...command };
     if (logCommand.directive === 'PASS') logCommand.arg = '********';
 
     const log = this.connection.log.child({directive: command.directive});
-    log.trace({command: logCommand}, 'Handle command');
+    log.debug('Handle command', {command: logCommand});
 
-    if (!REGISTRY.hasOwnProperty(command.directive)) {
+    if (!Object.prototype.hasOwnProperty.call(REGISTRY, command.directive)) {
       return this.connection.reply(502, `Command not allowed: ${command.directive}`);
     }
 
-    if (_.includes(this.blacklist, command.directive)) {
+    if (this.blacklist.includes(command.directive)) {
       return this.connection.reply(502, `Command blacklisted: ${command.directive}`);
     }
 
-    if (this.whitelist.length > 0 && !_.includes(this.whitelist, command.directive)) {
+    if (this.whitelist.length > 0 && !this.whitelist.includes(command.directive)) {
       return this.connection.reply(502, `Command not whitelisted: ${command.directive}`);
     }
 
     const commandRegister = REGISTRY[command.directive];
-    const commandFlags = _.get(commandRegister, 'flags', {});
+    const commandFlags = (commandRegister && commandRegister.flags) ? commandRegister.flags : {};
     if (!commandFlags.no_auth && !this.connection.authenticated) {
       return this.connection.reply(530, `Command requires authentication: ${command.directive}`);
     }
@@ -69,8 +70,9 @@ class FtpCommands {
     const handler = commandRegister.handler.bind(this.connection);
     return Promise.resolve(handler({log, command, previous_command: this.previousCommand}))
     .then(() => {
-      this.previousCommand = _.clone(command);
+      this.previousCommand = {...command};
     });
   }
 }
-module.exports = FtpCommands;
+
+export default FtpCommands;

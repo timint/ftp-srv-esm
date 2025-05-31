@@ -1,16 +1,17 @@
-const Promise = require('bluebird');
-const {expect} = require('chai');
-const sinon = require('sinon');
+import { expect } from 'chai';
+import sinon from 'sinon';
+import _cmd from '../../../../src/commands/registration/site/chmod.js';
 
 const CMD = 'CHMOD';
+
 describe(CMD, function () {
   let sandbox;
   const mockLog = {error: () => {}};
   const mockClient = {reply: () => Promise.resolve()};
-  const cmdFn = require(`../../../../src/commands/registration/site/${CMD.toLowerCase()}`).bind(mockClient);
+  const cmdFn = _cmd.handler.bind(mockClient);
 
   beforeEach(() => {
-    sandbox = sinon.sandbox.create().usingPromise(Promise);
+    sandbox = sinon.createSandbox();
 
     mockClient.fs = {
       chmod: () => Promise.resolve()
@@ -19,6 +20,7 @@ describe(CMD, function () {
     sandbox.spy(mockClient, 'reply');
     sandbox.spy(mockClient.fs, 'chmod');
   });
+
   afterEach(() => {
     sandbox.restore();
   });

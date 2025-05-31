@@ -1,8 +1,9 @@
-const Promise = require('bluebird');
-const {expect} = require('chai');
-const sinon = require('sinon');
+import { expect } from 'chai';
+import sinon from 'sinon';
+import _cmd from '../../../src/commands/registration/user.js';
 
 const CMD = 'USER';
+
 describe(CMD, function () {
   let sandbox;
   const mockLog = {
@@ -13,10 +14,10 @@ describe(CMD, function () {
     server: {options: {}},
     login: () => Promise.resolve()
   };
-  const cmdFn = require(`../../../src/commands/registration/${CMD.toLowerCase()}`).handler.bind(mockClient);
+  const cmdFn = _cmd.handler.bind(mockClient);
 
   beforeEach(() => {
-    sandbox = sinon.sandbox.create().usingPromise(Promise);
+    sandbox = sinon.createSandbox();
 
     delete mockClient.username;
     mockClient.server.options = {};

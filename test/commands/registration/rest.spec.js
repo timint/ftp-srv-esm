@@ -1,6 +1,6 @@
-const {expect} = require('chai');
-const sinon = require('sinon');
-const Promise = require('bluebird');
+import { expect } from 'chai';
+import sinon from 'sinon';
+import _cmd from '../../../src/commands/registration/rest.js';
 
 const CMD = 'REST';
 describe(CMD, function () {
@@ -8,11 +8,10 @@ describe(CMD, function () {
   const mockClient = {
     reply: () => Promise.resolve()
   };
-  const cmdFn = require(`../../../src/commands/registration/${CMD.toLowerCase()}`).handler.bind(mockClient);
+  const cmdFn = _cmd.handler.bind(mockClient);
 
   beforeEach(() => {
-    sandbox = sinon.sandbox.create().usingPromise(Promise);
-
+    sandbox = sinon.createSandbox();
     sandbox.spy(mockClient, 'reply');
   });
   afterEach(() => {

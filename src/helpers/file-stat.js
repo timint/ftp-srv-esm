@@ -1,24 +1,25 @@
-const _ = require('lodash');
-const moment = require('moment');
-const errors = require('../errors');
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc.js';
+dayjs.extend(utc);
+import errors from '../errors.js';
 
 const FORMATS = {
   ls,
   ep
 };
 
-module.exports = function (fileStat, format = 'ls') {
+export default function fileStat(fileStat, format = 'ls') {
   if (typeof format === 'function') return format(fileStat);
-  if (!FORMATS.hasOwnProperty(format)) {
+  if (!Object.prototype.hasOwnProperty.call(FORMATS, format)) {
     throw new errors.FileSystemError('Bad file stat formatter');
   }
   return FORMATS[format](fileStat);
 };
 
 function ls(fileStat) {
-  const now = moment.utc();
-  const mtime = moment.utc(new Date(fileStat.mtime));
-  const timeDiff = now.diff(mtime, 'months');
+  const now = dayjs.utc();
+  const mtime = dayjs.utc(new Date(fileStat.mtime));
+  const timeDiff = now.diff(mtime, 'month');
   const dateFormat = timeDiff < 6 ? 'MMM DD HH:mm' : 'MMM DD  YYYY';
 
   return [
@@ -35,21 +36,21 @@ function ls(fileStat) {
       fileStat.mode & 1 ? 'x' : '-'
     ].join('') : fileStat.isDirectory() ? 'drwxr-xr-x' : '-rwxr-xr-x',
     '1',
-    fileStat.uid || 1,
-    fileStat.gid || 1,
-    _.padStart(fileStat.size, 12),
-    _.padStart(mtime.format(dateFormat), 12),
+    fileStat.uid !== undefined ? fileStat.uid : 1,
+    fileStat.gid !== undefined ? fileStat.gid : 1,
+    fileStat.size !== undefined ? String(fileStat.size).padStart(12) : '            ',
+    String(mtime.format(dateFormat)).padStart(12),
     fileStat.name
   ].join(' ');
 }
 
 function ep(fileStat) {
-  const facts = _.compact([
+  const facts = [
     fileStat.dev && fileStat.ino ? `i${fileStat.dev.toString(16)}.${fileStat.ino.toString(16)}` : null,
     fileStat.size ? `s${fileStat.size}` : null,
-    fileStat.mtime ? `m${moment.utc(new Date(fileStat.mtime)).format('X')}` : null,
+    fileStat.mtime ? `m${dayjs.utc(new Date(fileStat.mtime)).format('X')}` : null,
     fileStat.mode ? `up${(fileStat.mode & 4095).toString(8)}` : null,
     fileStat.isDirectory() ? '/' : 'r'
-  ]).join(',');
+  ].filter(Boolean).join(',');
   return `+${facts}\t${fileStat.name}`;
 }

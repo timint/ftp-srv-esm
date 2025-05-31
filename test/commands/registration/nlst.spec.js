@@ -1,12 +1,16 @@
-const Promise = require('bluebird');
-const bunyan = require('bunyan');
-const {expect} = require('chai');
-const sinon = require('sinon');
+import winston from 'winston';
+import { expect } from 'chai';
+import sinon from 'sinon';
+import _cmd from '../../../src/commands/registration/nlst.js';
 
 const CMD = 'NLST';
+let log = winston.createLogger({
+  name: CMD,
+  format: winston.format.simple(),
+  transports: [new winston.transports.Console({ level: 'silly' })]
+});
 describe(CMD, function () {
   let sandbox;
-  let log = bunyan.createLogger({name: CMD});
   const mockClient = {
     reply: () => {},
     fs: {
@@ -22,11 +26,10 @@ describe(CMD, function () {
       pause: () => {}
     }
   };
-  const cmdFn = require(`../../../src/commands/registration/${CMD.toLowerCase()}`).handler.bind(mockClient);
+  const cmdFn = _cmd.handler.bind(mockClient);
 
   beforeEach(() => {
-    sandbox = sinon.sandbox.create().usingPromise(Promise);
-
+    sandbox = sandbox = sinon.createSandbox();
     sandbox.stub(mockClient, 'reply').resolves();
     sandbox.stub(mockClient.fs, 'get').resolves({
       name: 'testdir',

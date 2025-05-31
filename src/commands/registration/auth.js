@@ -1,10 +1,9 @@
-const _ = require('lodash');
-const tls = require('tls');
+import tls from 'tls';
 
-module.exports = {
+export default {
   directive: 'AUTH',
   handler: function ({command} = {}) {
-    const method = _.upperCase(command.arg);
+    const method = (command.arg || '').toUpperCase();
 
     switch (method) {
       case 'TLS': return handleTLS.call(this);

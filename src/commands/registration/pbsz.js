@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   directive: 'PBSZ',
   handler: function ({command} = {}) {
     if (!this.secure) return this.reply(202, 'Not supported');

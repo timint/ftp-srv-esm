@@ -1,31 +1,36 @@
-const _ = require('lodash');
-const Promise = require('bluebird');
-const nodeUrl = require('url');
-const buyan = require('bunyan');
-const net = require('net');
-const tls = require('tls');
-const EventEmitter = require('events');
+import { readFileSync } from 'fs';
+import winston from 'winston';
+import net from 'net';
+import tls from 'tls';
+import EventEmitter from 'events';
 
-const Connection = require('./connection');
-const {getNextPortFactory} = require('./helpers/find-port');
+import Connection from './connection.js';
+import { getNextPortFactory } from './helpers/find-port.js';
+const packageJson = JSON.parse(readFileSync(new URL('../package.json', import.meta.url)).toString());
 
 class FtpServer extends EventEmitter {
   constructor(options = {}) {
     super();
     this.options = Object.assign({
-      log: buyan.createLogger({name: 'ftp-srv'}),
+      log: winston.createLogger({
+        name: packageJson.name,
+        silent: true,
+        format: winston.format.simple(),
+        transports: [new winston.transports.Console({ level: 'silly' })]
+      }),
       url: 'ftp://127.0.0.1:21',
       pasv_min: 1024,
       pasv_max: 65535,
-      pasv_url: null,
+      pasv_hostname: null,
       anonymous: false,
-      file_format: 'ls',
+      list_format: 'ls',
       blacklist: [],
       whitelist: [],
       greeting: null,
       tls: false,
-      timeout: 0
-    }, options);
+      timeout: 0,
+      endOnProcessSignal: true
+    }, Object.fromEntries(Object.entries(options).filter(([_, v]) => v !== undefined)));
 
     this._greeting = this.setupGreeting(this.options.greeting);
     this._features = this.setupFeaturesMessage();
@@ -34,11 +39,11 @@ class FtpServer extends EventEmitter {
 
     this.connections = {};
     this.log = this.options.log;
-    this.url = nodeUrl.parse(this.options.url);
+    this.url = new URL(this.options.url);
     this.getNextPasvPort = getNextPortFactory(
-      _.get(this, 'url.hostname'),
-      _.get(this, 'options.pasv_min'),
-      _.get(this, 'options.pasv_max'));
+      this.url?.hostname,
+      this.options?.pasv_min,
+      this.options?.pasv_max);
 
     const timeout = Number(this.options.timeout);
     this.options.timeout = isNaN(timeout) ? 0 : Number(timeout);
@@ -52,7 +57,7 @@ class FtpServer extends EventEmitter {
       socket.once('close', () => {
         this.emit('disconnect', {connection, id: connection.id, newConnectionCount: Object.keys(this.connections).length});
       })
-      
+
       this.emit('connect', {connection, id: connection.id, newConnectionCount: Object.keys(this.connections).length});
 
       const greeting = this._greeting || [];
@@ -64,15 +69,23 @@ class FtpServer extends EventEmitter {
 
     this.server = (this.isTLS ? tls : net).createServer(serverOptions, serverConnectionHandler);
     this.server.on('error', (err) => {
-      this.log.error(err, '[Event] error');
+      this.log.error('[Event] error', {error: err});
       this.emit('server-error', {error: err});
     });
-    
-    const quit = _.debounce(this.quit.bind(this), 100);
 
-    process.on('SIGTERM', quit);
-    process.on('SIGINT', quit);
-    process.on('SIGQUIT', quit);
+    const quit = (() => {
+      let timeout;
+      return () => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => this.quit(), 100);
+      };
+    })();
+
+    if (this.options.endOnProcessSignal) {
+      process.on('SIGTERM', quit);
+      process.on('SIGINT', quit);
+      process.on('SIGQUIT', quit);
+    }
   }
 
   get isTLS() {
@@ -80,7 +93,7 @@ class FtpServer extends EventEmitter {
   }
 
   listen() {
-    if (!this.options.pasv_url) {
+    if (!this.options.pasv_hostname) {
       this.log.warn('Passive URL not set. Passive connections not available.');
     }
 
@@ -89,11 +102,11 @@ class FtpServer extends EventEmitter {
       this.server.listen(this.url.port, this.url.hostname, (err) => {
         this.server.removeListener('error', reject);
         if (err) return reject(err);
-        this.log.info({
+        this.log.info('Listening', {
           protocol: this.url.protocol.replace(/\W/g, ''),
           ip: this.url.hostname,
           port: this.url.port
-        }, 'Listening');
+        });
         resolve('Listening');
       });
     });
@@ -101,7 +114,7 @@ class FtpServer extends EventEmitter {
 
   emitPromise(action, ...data) {
     return new Promise((resolve, reject) => {
-      const params = _.concat(data, [resolve, reject]);
+      const params = [...data, resolve, reject];
       this.emit.call(this, action, ...params);
     });
   }
@@ -131,14 +144,14 @@ class FtpServer extends EventEmitter {
 
       setTimeout(() => {
         reject(new Error('Timed out disconnecting the client'))
-      }, this.options.timeout || 1000)
+      }, this.options.timeout || 1e3)
 
       try {
         client.close(0);
       } catch (err) {
-        this.log.error(err, 'Error closing connection', {id});
+        this.log.error('Error closing connection: '+ err, {id});
       }
-      
+
       resolve('Disconnected');
     });
   }
@@ -157,7 +170,7 @@ class FtpServer extends EventEmitter {
     .then(() => new Promise((resolve) => {
       this.server.close((err) => {
         this.log.info('Server closing...');
-        if (err) this.log.error(err, 'Error closing server');
+        if (err) this.log.error('Error closing server', {error: err});
         resolve('Closed');
       });
     }))
@@ -170,4 +183,5 @@ class FtpServer extends EventEmitter {
   }
 
 }
-module.exports = FtpServer;
+
+export default FtpServer;

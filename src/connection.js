@@ -1,19 +1,25 @@
-const _ = require('lodash');
-const uuid = require('uuid');
-const Promise = require('bluebird');
-const EventEmitter = require('events');
+import EventEmitter from 'events';
+import FileSystem from './fs.js';
+import BaseConnector from './connector/base.js';
+import Commands from './commands/index.js';
+import errors from './errors.js';
+import DEFAULT_MESSAGE from './messages.js';
+import crypto from 'crypto';
 
-const BaseConnector = require('./connector/base');
-const FileSystem = require('./fs');
-const Commands = require('./commands');
-const errors = require('./errors');
-const DEFAULT_MESSAGE = require('./messages');
+async function mapSeries(arr, fn) {
+  const results = [];
+  for (let i = 0; i < arr.length; i++) {
+    results.push(await fn(arr[i], i));
+  }
+  return results;
+}
 
 class FtpConnection extends EventEmitter {
   constructor(server, options) {
     super();
     this.server = server;
-    this.id = uuid.v4();
+    // Use crypto to generate a unique id
+    this.id = 'u' + crypto.randomBytes(8).toString('hex');
     this.commandSocket = options.socket;
     this.log = options.log.child({id: this.id, ip: this.ip});
     this.commands = new Commands(this);
@@ -26,12 +32,12 @@ class FtpConnection extends EventEmitter {
     this.connector = new BaseConnector(this);
 
     this.commandSocket.on('error', (err) => {
-      this.log.error(err, 'Client error');
+      this.log.error('Client error', err);
       this.server.emit('client-error', {connection: this, context: 'commandSocket', error: err});
     });
     this.commandSocket.on('data', this._handleData.bind(this));
     this.commandSocket.on('timeout', () => {
-      this.log.trace('Client timeout');
+      this.log.debug('Client timeout');
       this.close();
     });
     this.commandSocket.on('close', () => {
@@ -42,15 +48,15 @@ class FtpConnection extends EventEmitter {
   }
 
   _handleData(data) {
-    const messages = _.compact(data.toString(this.encoding).split('\r\n'));
-    this.log.trace(messages);
-    return Promise.mapSeries(messages, (message) => this.commands.handle(message));
+    const messages = data.toString(this.encoding).split('\r\n').filter(Boolean);
+    this.log.debug(messages);
+    return mapSeries(messages, (message) => this.commands.handle(message));
   }
 
   get ip() {
     try {
       return this.commandSocket ? this.commandSocket.remoteAddress : undefined;
-    } catch (ex) {
+    } catch {
       return null;
     }
   }
@@ -76,7 +82,7 @@ class FtpConnection extends EventEmitter {
   }
 
   login(username, password) {
-    return Promise.try(() => {
+    return Promise.resolve().then(() => {
       const loginListeners = this.server.listeners('login');
       if (!loginListeners || !loginListeners.length) {
         if (!this.server.options.anonymous) throw new errors.GeneralError('No "login" listener setup', 500);
@@ -86,8 +92,8 @@ class FtpConnection extends EventEmitter {
     })
     .then(({root, cwd, fs, blacklist = [], whitelist = []} = {}) => {
       this.authenticated = true;
-      this.commands.blacklist = _.concat(this.commands.blacklist, blacklist);
-      this.commands.whitelist = _.concat(this.commands.whitelist, whitelist);
+      this.commands.blacklist = [...this.commands.blacklist, ...blacklist];
+      this.commands.whitelist = [...this.commands.whitelist, ...whitelist];
       this.fs = fs || new FileSystem(this, {root, cwd});
     });
   }
@@ -97,7 +103,7 @@ class FtpConnection extends EventEmitter {
       if (typeof options === 'number') options = {code: options}; // allow passing in code as first param
       if (!Array.isArray(letters)) letters = [letters];
       if (!letters.length) letters = [{}];
-      return Promise.map(letters, (promise, index) => {
+      return Promise.all(letters.map((promise, index) => {
         return Promise.resolve(promise)
         .then((letter) => {
           if (!letter) letter = {};
@@ -111,10 +117,12 @@ class FtpConnection extends EventEmitter {
           return Promise.resolve(letter.message) // allow passing in a promise as a message
           .then((message) => {
             if (!options.useEmptyMessage) {
-              const seperator = !options.hasOwnProperty('eol') ?
+              const seperator = !Object.prototype.hasOwnProperty.call(options, 'eol') ?
                 letters.length - 1 === index ? ' ' : '-' :
                 options.eol ? ' ' : '-';
-              message = !letter.raw ? _.compact([letter.code || options.code, message]).join(seperator) : message;
+                message = !letter.raw
+                ? [letter.code || options.code, message].filter(Boolean).join(seperator)
+                : message;
               letter.message = message;
             } else {
               letter.message = '';
@@ -122,13 +130,13 @@ class FtpConnection extends EventEmitter {
             return letter;
           });
         });
-      });
+      }));
     };
 
     const processLetter = (letter) => {
       return new Promise((resolve, reject) => {
         if (letter.socket && letter.socket.writable) {
-          this.log.trace({port: letter.socket.address().port, encoding: letter.encoding, message: letter.message}, 'Reply');
+          this.log.debug('Reply', {port: letter.socket.address().port, encoding: letter.encoding, message: letter.message});
           letter.socket.write(letter.message + '\r\n', letter.encoding, (error) => {
             if (error) {
               this.log.error('[Process Letter] Socket Write Error', { error: error.message });
@@ -137,19 +145,20 @@ class FtpConnection extends EventEmitter {
             resolve();
           });
         } else {
-          this.log.trace({message: letter.message}, 'Could not write message');
+          this.log.debug('Could not write message', {message: letter.message});
           reject(new errors.SocketError('Socket not writable'));
         }
       });
     };
 
     return satisfyParameters()
-    .then((satisfiedLetters) => Promise.mapSeries(satisfiedLetters, (letter, index) => {
+    .then((satisfiedLetters) => mapSeries(satisfiedLetters, (letter, index) => {
       return processLetter(letter, index);
     }))
     .catch((error) => {
-        this.log.error('Satisfy Parameters Error', { error: error.message });
+      this.log.error('Satisfy Parameters Error', { error: error.message });
     });
   }
 }
-module.exports = FtpConnection;
+
+export default FtpConnection;

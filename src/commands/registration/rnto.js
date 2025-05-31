@@ -1,6 +1,4 @@
-const Promise = require('bluebird');
-
-module.exports = {
+export default {
   directive: 'RNTO',
   handler: function ({log, command} = {}) {
     if (!this.renameFrom) return this.reply(503);
@@ -11,11 +9,11 @@ module.exports = {
     const from = this.renameFrom;
     const to = command.arg;
 
-    return Promise.try(() => this.fs.rename(from, to))
+    return Promise.resolve().then(() => this.fs.rename(from, to))
     .then(() => {
       return this.reply(250);
     })
-    .tap(() => this.emit('RNTO', null, to))
+    .then(() => this.emit('RNTO', null, to))
     .catch((err) => {
       log.error(err);
       this.emit('RNTO', err);

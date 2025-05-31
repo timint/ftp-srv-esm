@@ -1,8 +1,6 @@
-/* eslint no-unused-expressions: 0 */
-const {expect} = require('chai');
-const net = require('net');
-
-const {getNextPortFactory, portNumberGenerator} = require('../../src/helpers/find-port');
+import { expect } from 'chai';
+import net from 'net';
+import { getNextPortFactory, portNumberGenerator } from '../../src/helpers/find-port.js';
 
 describe('getNextPortFactory', function () {
   describe('portNumberGenerator', () => {

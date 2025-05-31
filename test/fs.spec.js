@@ -1,21 +1,18 @@
-const {expect} = require('chai');
-const nodePath = require('path');
-const Promise = require('bluebird');
-
-const FileSystem = require('../src/fs');
-const errors = require('../src/errors');
+import { expect } from 'chai';
+import FileSystem from '../src/fs.js';
+import errors from '../src/errors.js';
 
 describe('FileSystem', function () {
   let fs;
 
   before(function () {
     fs = new FileSystem({}, {
-      root: '/tmp/ftp-srv',
+      root: '/tmp/ftp-srv-esm',
       cwd: 'file/1/2/3'
     });
   });
 
-  describe('extend', function () {
+  describe('File System extending', function () {
     class FileSystemOV extends FileSystem {
       chdir() {
         throw new errors.FileSystemError('Not a valid directory');
@@ -26,85 +23,71 @@ describe('FileSystem', function () {
       ovFs = new FileSystemOV({});
     });
 
-    it('handles error', function () {
-      return Promise.try(() => ovFs.chdir())
+    it('Handles an error', function () {
+      return Promise.resolve().then(() => ovFs.chdir())
       .catch((err) => {
         expect(err).to.be.instanceof(errors.FileSystemError);
       });
     });
   });
 
-  describe('#_resolvePath', function () {
-    it('gets correct relative path', function () {
+  describe('Resolves paths correctly', function () {
+    it('Gets correct relative path', function () {
       const result = fs._resolvePath('.');
       expect(result).to.be.an('object');
-      expect(result.clientPath).to.equal(
-        nodePath.normalize('/file/1/2/3'));
-      expect(result.fsPath).to.equal(
-        nodePath.resolve('/tmp/ftp-srv/file/1/2/3'));
+      expect(result).to.have.property('clientPath');
+      expect(result).to.have.property('fsPath');
+      expect(result.clientPath).to.equal('/file/1/2/3');
+      expect(result.fsPath).to.equal('/tmp/ftp-srv-esm/file/1/2/3');
     });
 
-    it('gets correct relative path', function () {
+    it('Gets correct relative path', function () {
       const result = fs._resolvePath('..');
       expect(result).to.be.an('object');
-      expect(result.clientPath).to.equal(
-        nodePath.normalize('/file/1/2'));
-      expect(result.fsPath).to.equal(
-        nodePath.resolve('/tmp/ftp-srv/file/1/2'));
+      expect(result.clientPath).to.equal('/file/1/2');
+      expect(result.fsPath).to.equal('/tmp/ftp-srv-esm/file/1/2');
     });
 
-    it('gets correct relative path', function () {
+    it('Gets correct relative path', function () {
       const result = fs._resolvePath('other');
       expect(result).to.be.an('object');
-      expect(result.clientPath).to.equal(
-        nodePath.normalize('/file/1/2/3/other'));
-      expect(result.fsPath).to.equal(
-        nodePath.resolve('/tmp/ftp-srv/file/1/2/3/other'));
+      expect(result.clientPath).to.equal('/file/1/2/3/other');
+      expect(result.fsPath).to.equal('/tmp/ftp-srv-esm/file/1/2/3/other');
     });
 
-    it('gets correct absolute path', function () {
+    it('Gets correct absolute path', function () {
       const result = fs._resolvePath('/other');
       expect(result).to.be.an('object');
-      expect(result.clientPath).to.equal(
-        nodePath.normalize('/other'));
-      expect(result.fsPath).to.equal(
-        nodePath.resolve('/tmp/ftp-srv/other'));
+      expect(result.clientPath).to.equal('/other');
+      expect(result.fsPath).to.equal('/tmp/ftp-srv-esm/other');
     });
 
-    it('cannot escape root - unix', function () {
+    it('Doesn\'t escape root (Unix directory separators)', function () {
       const result = fs._resolvePath('../../../../../../../../../../..');
       expect(result).to.be.an('object');
-      expect(result.clientPath).to.equal(
-        nodePath.normalize('/'));
-      expect(result.fsPath).to.equal(
-        nodePath.resolve('/tmp/ftp-srv'));
+      expect(result.clientPath).to.equal('/');
+      expect(result.fsPath).to.equal('/tmp/ftp-srv-esm');
     });
 
-    it('cannot escape root - win', function () {
+    it('Doesn\'t escape root (Windows directory separators)', function () {
       const result = fs._resolvePath('.\\..\\..\\..\\..\\..\\..\\');
       expect(result).to.be.an('object');
-      expect(result.clientPath).to.equal(
-        nodePath.normalize('/'));
-      expect(result.fsPath).to.equal(
-        nodePath.resolve('/tmp/ftp-srv'));
+      expect(result.clientPath).to.equal('/');
+      expect(result.fsPath).to.equal('/tmp/ftp-srv-esm');
     });
 
-    it('cannot escape root - backslash prefix', function () {
+    it('Doesn\'t escape root (with backslash prefix)', function () {
       const result = fs._resolvePath('\\/../../../../../../');
       expect(result).to.be.an('object');
-      expect(result.clientPath).to.equal(
-        nodePath.normalize('/'));
-      expect(result.fsPath).to.equal(
-        nodePath.resolve('/tmp/ftp-srv'));
+      expect(result.clientPath).to.equal('/');
+      expect(result.fsPath).to.equal('/tmp/ftp-srv-esm');
     });
 
-    it('resolves to file', function () {
+    it('Resolves to correct filesystem file', function () {
       const result = fs._resolvePath('/cool/file.txt');
       expect(result).to.be.an('object');
-      expect(result.clientPath).to.equal(
-        nodePath.normalize('/cool/file.txt'));
-      expect(result.fsPath).to.equal(
-        nodePath.resolve('/tmp/ftp-srv/cool/file.txt'));
+      expect(result.clientPath).to.equal('/cool/file.txt');
+      expect(result.fsPath).to.equal('/tmp/ftp-srv-esm/cool/file.txt');
     });
   });
 });

@@ -1,41 +1,55 @@
-const _ = require('lodash');
-const nodePath = require('path');
-const uuid = require('uuid');
-const Promise = require('bluebird');
-const {createReadStream, createWriteStream, constants} = require('fs');
-const fsAsync = require('./helpers/fs-async');
-const errors = require('./errors');
-
-const UNIX_SEP_REGEX = /\//g;
-const WIN_SEP_REGEX = /\\/g;
+import nodePath from 'path';
+import { randomBytes } from 'crypto';
+import { accessSync, chmodSync, createReadStream, createWriteStream, constants, mkdirSync, readdirSync, renameSync, rmdirSync, statSync, unlinkSync } from 'fs';
+import errors from './errors.js';
 
 class FileSystem {
   constructor(connection, {root, cwd} = {}) {
     this.connection = connection;
-    this.cwd = nodePath.normalize((cwd || '/').replace(WIN_SEP_REGEX, '/'));
-    this._root = nodePath.resolve(root || process.cwd());
+    this.cwd = nodePath.normalize(cwd || '/').replace(/[/\\]+/g, '/');
+    let rootPath = root || process.cwd();
+    if (nodePath.isAbsolute(rootPath)) {
+      this._root = nodePath.normalize(rootPath);
+    } else {
+      this._root = nodePath.resolve(rootPath);
+    }
   }
 
   get root() {
     return this._root;
   }
 
-  _resolvePath(path = '.') {
-    // Unix separators normalize nicer on both unix and win platforms
-    const resolvedPath = path.replace(WIN_SEP_REGEX, '/');
+  _resolvePath(dir = '.') {
+    // Use node's path module for normalization
+    const normalizedPath = nodePath.normalize(dir).replace(/[/\\]+/g, '/');
 
     // Join cwd with new path
-    const joinedPath = nodePath.isAbsolute(resolvedPath)
-      ? nodePath.normalize(resolvedPath)
-      : nodePath.join('/', this.cwd, resolvedPath);
+    let clientPath = nodePath.isAbsolute(normalizedPath)
+      ? normalizedPath
+      : nodePath.join(this.cwd, normalizedPath).replace(/[/\\]+/g, '/');
 
-    // Create local filesystem path using the platform separator
-    const fsPath = nodePath.resolve(nodePath.join(this.root, joinedPath)
-      .replace(UNIX_SEP_REGEX, nodePath.sep)
-      .replace(WIN_SEP_REGEX, nodePath.sep));
+    // Ensure clientPath starts with a leading slash
+    if (!clientPath.startsWith('/')) {
+      clientPath = '/' + clientPath;
+    }
 
-    // Create FTP client path using unix separator
-    const clientPath = joinedPath.replace(WIN_SEP_REGEX, '/');
+    // Prevent escaping root: clamp to '/'
+    const segments = clientPath.split('/').filter(Boolean);
+    let safeSegments = [];
+    for (const seg of segments) {
+      if (seg === '..') {
+        if (safeSegments.length > 0) safeSegments.pop();
+      } else if (seg !== '.') {
+        safeSegments.push(seg);
+      }
+    }
+    clientPath = '/' + safeSegments.join('/');
+
+    // For fsPath, join root with clientPath, but avoid double-absolute path on Windows
+    let fsPath = nodePath.join(this._root, clientPath.slice(1));
+
+    // Convert fsPath to use forward slashes
+    fsPath = fsPath.replace(/\\/g, '/');
 
     return {
       clientPath,
@@ -47,45 +61,46 @@ class FileSystem {
     return this.cwd;
   }
 
-  get(fileName) {
-    const {fsPath} = this._resolvePath(fileName);
-    return fsAsync.stat(fsPath)
-    .then((stat) => _.set(stat, 'name', fileName));
+  chdir(path = '.') {
+    const {clientPath, fsPath} = this._resolvePath(path);
+    const statObj = statSync(fsPath);
+    if (!statObj.isDirectory()) throw new errors.FileSystemError('Not a valid directory');
+    this.cwd = clientPath;
+    return this.currentDirectory();
   }
 
   list(path = '.') {
     const {fsPath} = this._resolvePath(path);
-    return fsAsync.readdir(fsPath)
-    .then((fileNames) => {
-      return Promise.map(fileNames, (fileName) => {
-        const filePath = nodePath.join(fsPath, fileName);
-        return fsAsync.access(filePath, constants.F_OK)
-        .then(() => {
-          return fsAsync.stat(filePath)
-          .then((stat) => _.set(stat, 'name', fileName));
-        })
-        .catch(() => null);
-      });
-    })
-    .then(_.compact);
+    const fileNames = readdirSync(fsPath);
+    const results = fileNames.map((fileName) => {
+      const filePath = nodePath.join(fsPath, fileName);
+      try {
+        accessSync(filePath, constants.F_OK);
+        const statObj = statSync(filePath);
+        statObj.name = fileName;
+        return statObj;
+      } catch {
+        return null;
+      }
+    });
+    return results.filter(Boolean);
   }
 
-  chdir(path = '.') {
-    const {fsPath, clientPath} = this._resolvePath(path);
-    return fsAsync.stat(fsPath)
-    .tap((stat) => {
-      if (!stat.isDirectory()) throw new errors.FileSystemError('Not a valid directory');
-    })
-    .then(() => {
-      this.cwd = clientPath;
-      return this.currentDirectory();
-    });
+  get(fileName) {
+    const {fsPath} = this._resolvePath(fileName);
+    const statObj = statSync(fsPath);
+    statObj.name = fileName;
+    return statObj;
   }
 
   write(fileName, {append = false, start = undefined} = {}) {
     const {fsPath, clientPath} = this._resolvePath(fileName);
     const stream = createWriteStream(fsPath, {flags: !append ? 'w+' : 'a+', start});
-    stream.once('error', () => fsAsync.unlink(fsPath));
+    stream.once('error', async () => {
+      try {
+        unlinkSync(fsPath);
+      } catch { /* ignore error */ }
+    });
     stream.once('close', () => stream.end());
     return {
       stream,
@@ -94,48 +109,46 @@ class FileSystem {
   }
 
   read(fileName, {start = undefined} = {}) {
-    const {fsPath, clientPath} = this._resolvePath(fileName);
-    return fsAsync.stat(fsPath)
-    .tap((stat) => {
-      if (stat.isDirectory()) throw new errors.FileSystemError('Cannot read a directory');
-    })
-    .then(() => {
-      const stream = createReadStream(fsPath, {flags: 'r', start});
-      return {
-        stream,
-        clientPath
-      };
-    });
+    const {clientPath, fsPath} = this._resolvePath(fileName);
+    if (statSync(fsPath).isDirectory()) {
+      throw new errors.FileSystemError('Cannot read a directory');
+    }
+    const stream = createReadStream(fsPath, {flags: 'r', start});
+    return {
+      stream,
+      clientPath
+    };
   }
 
   delete(path) {
     const {fsPath} = this._resolvePath(path);
-    return fsAsync.stat(fsPath)
-    .then((stat) => {
-      if (stat.isDirectory()) return fsAsync.rmdir(fsPath);
-      else return fsAsync.unlink(fsPath);
-    });
+    const statObj = statSync(fsPath);
+    if (statObj.isDirectory()) return rmdirSync(fsPath);
+    else return unlinkSync(fsPath);
   }
 
   mkdir(path) {
     const {fsPath} = this._resolvePath(path);
-    return fsAsync.mkdir(fsPath, { recursive: true })
-    .then(() => fsPath);
+    mkdirSync(fsPath, { recursive: true });
+    return fsPath;
   }
 
   rename(from, to) {
     const {fsPath: fromPath} = this._resolvePath(from);
     const {fsPath: toPath} = this._resolvePath(to);
-    return fsAsync.rename(fromPath, toPath);
+    return renameSync(fromPath, toPath);
   }
 
   chmod(path, mode) {
     const {fsPath} = this._resolvePath(path);
-    return fsAsync.chmod(fsPath, mode);
+    return chmodSync(fsPath, mode);
   }
 
   getUniqueName() {
-    return uuid.v4().replace(/\W/g, '');
+    const randomPart = randomBytes(8).toString('hex');
+    const timestampPart = Date.now().toString(36);
+    return `${timestampPart}-${randomPart}`;
   }
 }
-module.exports = FileSystem;
+
+export default FileSystem;

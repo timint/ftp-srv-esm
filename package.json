@@ -1,33 +1,45 @@
 {
-  "name": "ftp-srv",
-  "version": "0.0.0",
-  "description": "Modern, extensible FTP Server",
-  "keywords": [
-    "ftp",
-    "ftp-server",
-    "ftp-srv",
-    "ftp-svr",
-    "ftpd",
-    "ftpserver",
-    "server"
-  ],
+  "name": "ftp-srv-esm",
+  "version": "5.0.0",
+  "description": "Modern, extensible FTP server (daemon) for Node.js with ESM support. Based on ftp-srv.",
+  "keywords": ["ftp-srv-esm", "ftp", "ftp-srv", "ftp-server", "ftp-daemon", "ftpd", "ftpserver", "server", "daemon" ],
   "license": "MIT",
   "files": [
     "src",
     "bin",
-    "ftp-srv.d.ts"
+    "ftp-srv-esm.d.ts"
   ],
-  "main": "ftp-srv.js",
+  "type": "module",
+  "main": "ftp-srv-esm.js",
   "bin": "./bin/index.js",
-  "types": "./ftp-srv.d.ts",
+  "types": "./ftp-srv-esm.d.ts",
   "repository": {
     "type": "git",
-    "url": "https://github.com/autovance/ftp-srv"
+    "url": "https://github.com/timint/ftp-srv-esm"
   },
+  "engines": { "node": ">=22" },
   "scripts": {
     "pre-release": "npm run verify",
-    "test": "mocha test/*/*/*.spec.js test/*/*.spec.js test/*.spec.js",
+    "test": "npx mocha test/*/*/*.spec.js test/*/*.spec.js test/*.spec.js",
+    "test:bail": "npx mocha --bail test/*/*/*.spec.js test/*/*.spec.js test/*.spec.js",
+    "test:start": "node test/start.js",
     "verify": "eslint src/**/*.js test/**/*.js bin/**/*.js"
+  },
+  "dependencies": {
+    "@eslint/js": "^9.28.0",
+    "dayjs": "^1.11.13",
+    "neoip": "^3.0.1",
+    "winston": "^3.17.0",
+    "yargs": "^18.0.0"
+  },
+  "devDependencies": {
+    "basic-ftp": "^5.0.5",
+    "chai": "^5.2.0",
+    "eslint": "^9.28.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.0",
+    "mocha": "^11.6.0",
+    "sinon": "^20.0.0"
   },
   "release": {
     "verifyConditions": "condition-circle",
@@ -51,43 +63,5 @@
     "extends": [
       "@commitlint/config-conventional"
     ]
-  },
-  "eslintConfig": {
-    "extends": "eslint:recommended",
-    "env": {
-      "node": true,
-      "mocha": true,
-      "es6": true
-    },
-    "parserOptions": {
-      "ecmaVersion": 6,
-      "sourceType": "module"
-    }
-  },
-  "dependencies": {
-    "bluebird": "^3.5.1",
-    "bunyan": "^1.8.12",
-    "ip": "^1.1.5",
-    "lodash": "^4.17.15",
-    "moment": "^2.22.1",
-    "uuid": "^3.2.1",
-    "yargs": "^15.4.1"
-  },
-  "devDependencies": {
-    "@commitlint/cli": "^10.0.0",
-    "@commitlint/config-conventional": "^16.2.1",
-    "@icetee/ftp": "^1.0.2",
-    "chai": "^4.2.0",
-    "condition-circle": "^2.0.2",
-    "eslint": "^5.14.1",
-    "husky": "^1.3.1",
-    "lint-staged": "^12.3.7",
-    "mocha": "^9.2.2",
-    "rimraf": "^2.6.1",
-    "semantic-release": "^19.0.2",
-    "sinon": "^2.3.5"
-  },
-  "engines": {
-    "node": ">=12"
   }
 }

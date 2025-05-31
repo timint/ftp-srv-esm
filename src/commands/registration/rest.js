@@ -1,9 +1,7 @@
-const _ = require('lodash');
-
-module.exports = {
+export default {
   directive: 'REST',
   handler: function ({command} = {}) {
-    const arg = _.get(command, 'arg');
+    const arg = command?.arg;
     const byteCount = parseInt(arg, 10);
 
     if (isNaN(byteCount) || byteCount < 0) return this.reply(501, 'Byte count must be 0 or greater');

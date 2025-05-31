@@ -1,15 +1,16 @@
-const Promise = require('bluebird');
-const moment = require('moment');
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc.js';
+dayjs.extend(utc);
 
-module.exports = {
+export default {
   directive: 'MDTM',
   handler: function ({log, command} = {}) {
     if (!this.fs) return this.reply(550, 'File system not instantiated');
     if (!this.fs.get) return this.reply(402, 'Not supported by file system');
 
-    return Promise.try(() => this.fs.get(command.arg))
+    return Promise.resolve().then(() => this.fs.get(command.arg))
     .then((fileStat) => {
-      const modificationTime = moment.utc(fileStat.mtime).format('YYYYMMDDHHmmss.SSS');
+      const modificationTime = dayjs.utc(fileStat.mtime).format('YYYYMMDDHHmmss.SSS');
       return this.reply(213, modificationTime);
     })
     .catch((err) => {

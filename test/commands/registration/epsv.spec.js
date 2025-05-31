@@ -1,8 +1,7 @@
-const Promise = require('bluebird');
-const {expect} = require('chai');
-const sinon = require('sinon');
-
-const PassiveConnector = require('../../../src/connector/passive');
+import { expect } from 'chai';
+import sinon from 'sinon';
+import PassiveConnector from '../../../src/connector/passive.js';
+import _cmd from '../../../src/commands/registration/epsv.js';
 
 const CMD = 'EPSV';
 describe(CMD, function () {
@@ -10,11 +9,10 @@ describe(CMD, function () {
   const mockClient = {
     reply: () => Promise.resolve()
   };
-  const cmdFn = require(`../../../src/commands/registration/${CMD.toLowerCase()}`).handler.bind(mockClient);
+  const cmdFn = _cmd.handler.bind(mockClient);
 
   beforeEach(() => {
-    sandbox = sinon.sandbox.create().usingPromise(Promise);
-
+    sandbox = sinon.createSandbox();
     sandbox.stub(mockClient, 'reply').resolves();
     sandbox.stub(PassiveConnector.prototype, 'setupServer').resolves({
       address: () => ({port: 12345})

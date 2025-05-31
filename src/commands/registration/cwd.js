@@ -1,16 +1,13 @@
-const Promise = require('bluebird');
-const escapePath = require('../../helpers/escape-path');
-
-module.exports = {
+export default {
   directive: ['CWD', 'XCWD'],
   handler: function ({log, command} = {}) {
     if (!this.fs) return this.reply(550, 'File system not instantiated');
     if (!this.fs.chdir) return this.reply(402, 'Not supported by file system');
 
-    return Promise.try(() => this.fs.chdir(command.arg))
+    return Promise.resolve().then(() => this.fs.chdir(command.arg))
     .then((cwd) => {
-      const path = cwd ? `"${escapePath(cwd)}"` : undefined;
-      return this.reply(250, path);
+      const path = cwd ? '"'+ cwd.replace(/"/g, '""') +'"' : '';
+      return this.reply(250, `OK. Current directory is ${path}`);
     })
     .catch((err) => {
       log.error(err);

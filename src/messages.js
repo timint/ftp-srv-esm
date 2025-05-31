@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   // 100 - 199 :: Remarks
   100: 'The requested action is being initiated',
   110: 'Restart marker reply',

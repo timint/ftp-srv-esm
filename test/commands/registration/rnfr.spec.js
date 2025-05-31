@@ -1,16 +1,17 @@
-const Promise = require('bluebird');
-const {expect} = require('chai');
-const sinon = require('sinon');
+import { expect } from 'chai';
+import sinon from 'sinon';
+import _cmd from '../../../src/commands/registration/rnfr.js';
 
 const CMD = 'RNFR';
 describe(CMD, function () {
   let sandbox;
   const mockLog = {error: () => {}};
   const mockClient = {reply: () => Promise.resolve()};
-  const cmdFn = require(`../../../src/commands/registration/${CMD.toLowerCase()}`).handler.bind(mockClient);
+
+  const cmdFn = _cmd.handler.bind(mockClient);
 
   beforeEach(() => {
-    sandbox = sinon.sandbox.create().usingPromise(Promise);
+    sandbox = sinon.createSandbox();
 
     mockClient.renameFrom = 'test';
     mockClient.fs = {

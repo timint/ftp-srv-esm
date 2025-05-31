@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   directive: 'SYST',
   handler: function () {
     return this.reply(215);

@@ -1,5 +1,7 @@
-module.exports = {
+import chmod from './chmod.js';
+
+export default {
   CHMOD: {
-    handler: require('./chmod')
+    handler: chmod
   }
 };

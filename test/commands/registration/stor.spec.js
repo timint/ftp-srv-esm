@@ -1,13 +1,18 @@
-const Promise = require('bluebird');
-const bunyan = require('bunyan');
-const {expect} = require('chai');
-const sinon = require('sinon');
-const EventEmitter = require('events');
+import { expect } from 'chai';
+import sinon from 'sinon';
+import winston from 'winston';
+import EventEmitter from 'events';
+import errors from '../../../src/errors.js';
+import _cmd from '../../../src/commands/registration/stor.js';
 
 const CMD = 'STOR';
+let log = winston.createLogger({
+  name: CMD,
+  format: winston.format.simple(),
+  transports: [new winston.transports.Console({ level: 'silly' })]
+});
 describe(CMD, function () {
   let sandbox;
-  let log = bunyan.createLogger({name: CMD});
   let emitter;
   const mockClient = {
     commandSocket: {
@@ -22,10 +27,10 @@ describe(CMD, function () {
       end: () => Promise.resolve({})
     }
   };
-  const cmdFn = require(`../../../src/commands/registration/${CMD.toLowerCase()}`).handler.bind(mockClient);
+  const cmdFn = _cmd.handler.bind(mockClient);
 
   beforeEach(() => {
-    sandbox = sinon.sandbox.create().usingPromise(Promise);
+    sandbox = sinon.createSandbox();
 
     mockClient.fs = {
       write: () => {}
@@ -60,7 +65,7 @@ describe(CMD, function () {
 
   it('// unsuccessful | connector times out', () => {
     sandbox.stub(mockClient.connector, 'waitForConnection').callsFake(function () {
-      return Promise.reject(new Promise.TimeoutError());
+      return Promise.reject(new errors.TimeoutError('Timeout'));
     });
 
     return cmdFn({log, command: {arg: 'test.txt'}})

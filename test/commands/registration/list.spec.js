@@ -1,12 +1,17 @@
-const Promise = require('bluebird');
-const bunyan = require('bunyan');
-const {expect} = require('chai');
-const sinon = require('sinon');
+import winston from 'winston';
+import { expect } from 'chai';
+import sinon from 'sinon';
+import _cmd from '../../../src/commands/registration/list.js';
+import errors from '../../../src/errors.js';
 
 const CMD = 'LIST';
+let log = winston.createLogger({
+  name: CMD,
+  format: winston.format.simple(),
+  transports: [new winston.transports.Console({ level: 'silly' })]
+});
 describe(CMD, function () {
   let sandbox;
-  let log = bunyan.createLogger({name: CMD});
   const mockClient = {
     reply: () => {},
     fs: {
@@ -22,11 +27,10 @@ describe(CMD, function () {
       pause: () => {}
     }
   };
-  const cmdFn = require(`../../../src/commands/registration/${CMD.toLowerCase()}`).handler.bind(mockClient);
+  const cmdFn = _cmd.handler.bind(mockClient);
 
   beforeEach(() => {
-    sandbox = sinon.sandbox.create().usingPromise(Promise);
-
+    sandbox = sinon.createSandbox();
     sandbox.stub(mockClient, 'reply').resolves();
     sandbox.stub(mockClient.fs, 'get').resolves({
       name: 'testdir',
@@ -89,7 +93,7 @@ describe(CMD, function () {
   describe('// check', function () {
     it('fails on no fs', () => {
       const badMockClient = {reply: () => {}};
-      const badCmdFn = require(`../../../src/commands/registration/${CMD.toLowerCase()}`).handler.bind(badMockClient);
+      const badCmdFn = _cmd.handler.bind(badMockClient);
       sandbox.stub(badMockClient, 'reply').resolves();
 
       return badCmdFn()
@@ -100,7 +104,7 @@ describe(CMD, function () {
 
     it('fails on no fs list command', () => {
       const badMockClient = {reply: () => {}, fs: {}};
-      const badCmdFn = require(`../../../src/commands/registration/${CMD.toLowerCase()}`).handler.bind(badMockClient);
+      const badCmdFn = _cmd.handler.bind(badMockClient);
       sandbox.stub(badMockClient, 'reply').resolves();
 
       return badCmdFn()
@@ -165,7 +169,9 @@ describe(CMD, function () {
   });
 
   it('. // unsuccessful (timeout)', () => {
-    sandbox.stub(mockClient.connector, 'waitForConnection').returns(Promise.reject(new Promise.TimeoutError()));
+    sandbox.stub(mockClient.connector, 'waitForConnection').returns(
+      Promise.reject(new errors.TimeoutError('Timeout'))
+    );
 
     return cmdFn({log, command: {directive: CMD}})
     .then(() => {

@@ -1,6 +1,6 @@
-const PassiveConnector = require('../../connector/passive');
+import PassiveConnector from '../../connector/passive.js';
 
-module.exports = {
+export default {
   directive: 'EPSV',
   handler: function ({log}) {
     this.connector = new PassiveConnector(this);

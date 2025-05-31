@@ -1,5 +1,5 @@
-const net = require('net');
-const errors = require('../errors');
+import { createServer } from 'net';
+import errors from '../errors.js';
 
 const MAX_PORT = 65535;
 const MAX_PORT_CHECK_ATTEMPT = 5;
@@ -18,7 +18,7 @@ function getNextPortFactory(host, portMin, portMax, maxAttempts = MAX_PORT_CHECK
   const nextPortNumber = portNumberGenerator(portMin, portMax);
 
   return () => new Promise((resolve, reject) => {
-    const portCheckServer = net.createServer();
+    const portCheckServer = createServer();
     portCheckServer.maxConnections = 0;
 
     let attemptCount = 0;
@@ -55,7 +55,7 @@ function getNextPortFactory(host, portMin, portMax, maxAttempts = MAX_PORT_CHECK
   });
 }
 
-module.exports = {
+export {
   getNextPortFactory,
   portNumberGenerator
 };

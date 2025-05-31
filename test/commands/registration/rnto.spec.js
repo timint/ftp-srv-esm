@@ -1,7 +1,7 @@
-const Promise = require('bluebird');
-const {expect} = require('chai');
-const sinon = require('sinon');
-const EventEmitter = require('events');
+import { expect } from 'chai';
+import sinon from 'sinon';
+import EventEmitter from 'events';
+import _cmd from '../../../src/commands/registration/rnto.js';
 
 const CMD = 'RNTO';
 describe(CMD, function () {
@@ -9,10 +9,10 @@ describe(CMD, function () {
   const mockLog = {error: () => {}};
   let emitter;
   const mockClient = {reply: () => Promise.resolve()};
-  const cmdFn = require(`../../../src/commands/registration/${CMD.toLowerCase()}`).handler.bind(mockClient);
+  const cmdFn = _cmd.handler.bind(mockClient);
 
   beforeEach(() => {
-    sandbox = sinon.sandbox.create().usingPromise(Promise);
+    sandbox = sinon.createSandbox();
 
     mockClient.renameFrom = 'test';
     mockClient.fs = {

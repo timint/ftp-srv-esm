@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   directive: 'USER',
   handler: function ({log, command} = {}) {
     if (this.username) return this.reply(530, 'Username already set');

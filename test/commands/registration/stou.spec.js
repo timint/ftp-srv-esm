@@ -1,19 +1,19 @@
-const Promise = require('bluebird');
-const {expect} = require('chai');
-const sinon = require('sinon');
-
-const stor = require('../../../src/commands/registration/stor');
+import { expect } from 'chai';
+import sinon from 'sinon';
+import _cmdStou from '../../../src/commands/registration/stou.js';
+import _cmdStor from '../../../src/commands/registration/stor.js';
 
 const CMD = 'STOU';
+
 describe(CMD, function () {
   let sandbox;
   const mockClient = {
     reply: () => Promise.resolve()
   };
-  const cmdFn = require(`../../../src/commands/registration/${CMD.toLowerCase()}`).handler.bind(mockClient);
+  const cmdFn = _cmdStou.handler.bind(mockClient);
 
   beforeEach(() => {
-    sandbox = sinon.sandbox.create().usingPromise(Promise);
+    sandbox = sinon.createSandbox();
 
     mockClient.fs = {
       get: () => Promise.resolve(),
@@ -24,7 +24,7 @@ describe(CMD, function () {
     sandbox.spy(mockClient.fs, 'get');
     sandbox.spy(mockClient.fs, 'getUniqueName');
 
-    sandbox.stub(stor.handler, 'call').resolves({});
+    sandbox.stub(_cmdStor.handler, 'call').resolves({});
   });
   afterEach(() => {
     sandbox.restore();
@@ -54,7 +54,7 @@ describe(CMD, function () {
 
     return cmdFn({command: {arg: 'good'}})
     .then(() => {
-      const call = stor.handler.call.args[0][1];
+      const call = _cmdStor.handler.call.args[0][1];
       expect(call).to.have.property('command');
       expect(call.command).to.have.property('arg');
       expect(call.command.arg).to.eql('good');
@@ -65,7 +65,7 @@ describe(CMD, function () {
   it('// successful | generates unique name', () => {
     return cmdFn({command: {arg: 'bad'}})
     .then(() => {
-      const call = stor.handler.call.args[0][1];
+      const call = _cmdStor.handler.call.args[0][1];
       expect(call).to.have.property('command');
       expect(call.command).to.have.property('arg');
       expect(call.command.arg).to.eql('4');

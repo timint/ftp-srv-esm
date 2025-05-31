@@ -1,12 +1,9 @@
-/* eslint no-unused-expressions: 0 */
-const {expect} = require('chai');
-const sinon = require('sinon');
-
-const net = require('net');
-const tls = require('tls');
-
-const ActiveConnector = require('../../src/connector/active');
-const {getNextPortFactory} = require('../../src/helpers/find-port');
+import { expect } from 'chai';
+import sinon from 'sinon';
+import net from 'net';
+import tls from 'tls';
+import ActiveConnector from '../../src/connector/active.js';
+import { getNextPortFactory } from '../../src/helpers/find-port.js';
 
 describe('Connector - Active //', function () {
   const host = '127.0.0.1';
@@ -23,7 +20,7 @@ describe('Connector - Active //', function () {
 
   beforeEach((done) => {
     active = new ActiveConnector(mockConnection);
-    sandbox = sinon.sandbox.create().usingPromise(Promise);
+    sandbox = sinon.createSandbox();
 
     getNextPort()
     .then((port) => {

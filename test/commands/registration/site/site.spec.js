@@ -1,26 +1,31 @@
-const Promise = require('bluebird');
-const {expect} = require('chai');
-const sinon = require('sinon');
-const bunyan = require('bunyan');
+import { expect } from 'chai';
+import sinon from 'sinon';
+import winston from 'winston';
 
-const siteRegistry = require('../../../../src/commands/registration/site/registry');
-const FtpCommands = require('../../../../src/commands');
+import siteRegistry from '../../../../src/commands/registration/site/registry.js';
+import FtpCommands from '../../../../src/commands/index.js';
+import _cmd from '../../../../src/commands/registration/site/index.js';
 
 const CMD = 'SITE';
+const log = winston.createLogger({
+  name: 'site-test',
+  format: winston.format.simple(),
+  transports: [new winston.transports.Console({ level: 'silly' })]
+});
 describe(CMD, function () {
   let sandbox;
-  const log = bunyan.createLogger({name: 'site-test'});
   const mockClient = {
     reply: () => Promise.resolve(),
     commands: new FtpCommands()
   };
-  const cmdFn = require(`../../../../src/commands/registration/${CMD.toLowerCase()}`).handler.bind(mockClient);
+  const cmdFn = _cmd.handler.bind(mockClient);
 
   beforeEach(() => {
-    sandbox = sinon.sandbox.create().usingPromise(Promise);
+    sandbox = sinon.createSandbox();
 
     sandbox.stub(mockClient, 'reply').resolves();
   });
+
   afterEach(() => {
     sandbox.restore();
   });

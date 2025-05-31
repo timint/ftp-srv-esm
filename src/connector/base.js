@@ -1,5 +1,4 @@
-const Promise = require('bluebird');
-const errors = require('../errors');
+import errors from '../errors.js';
 
 class Connector {
   constructor(connection) {
@@ -50,4 +49,5 @@ class Connector {
     this.connection.connector = new Connector(this);
   }
 }
-module.exports = Connector;
+
+export default Connector;

@@ -1,20 +1,24 @@
-const bunyan = require('bunyan');
-const {expect} = require('chai');
-const sinon = require('sinon');
+import winston from 'winston';
+import sinon from 'sinon';
+import { expect } from 'chai';
+import _cmd from '../../../src/commands/registration/mkd.js';
 
 const CMD = 'MKD';
+let log = winston.createLogger({
+  name: CMD,
+  format: winston.format.simple(),
+  transports: [new winston.transports.Console({ level: 'silly' })]
+});
 describe(CMD, function () {
   let sandbox;
-  let log = bunyan.createLogger({name: CMD});
   const mockClient = {
     reply: () => {},
     fs: {mkdir: () => {}}
   };
-  const cmdFn = require(`../../../src/commands/registration/${CMD.toLowerCase()}`).handler.bind(mockClient);
+  const cmdFn = _cmd.handler.bind(mockClient);
 
   beforeEach(() => {
-    sandbox = sinon.sandbox.create().usingPromise(Promise);
-
+    sandbox = sandbox = sinon.createSandbox();
     sandbox.stub(mockClient, 'reply').resolves();
     sandbox.stub(mockClient.fs, 'mkdir').resolves();
   });
@@ -25,7 +29,7 @@ describe(CMD, function () {
   describe('// check', function () {
     it('fails on no fs', () => {
       const badMockClient = {reply: () => {}};
-      const badCmdFn = require(`../../../src/commands/registration/${CMD.toLowerCase()}`).handler.bind(badMockClient);
+      const badCmdFn = _cmd.handler.bind(badMockClient);
       sandbox.stub(badMockClient, 'reply').resolves();
 
       return badCmdFn()
@@ -36,7 +40,7 @@ describe(CMD, function () {
 
     it('fails on no fs mkdir command', () => {
       const badMockClient = {reply: () => {}, fs: {}};
-      const badCmdFn = require(`../../../src/commands/registration/${CMD.toLowerCase()}`).handler.bind(badMockClient);
+      const badCmdFn = _cmd.handler.bind(badMockClient);
       sandbox.stub(badMockClient, 'reply').resolves();
 
       return badCmdFn()

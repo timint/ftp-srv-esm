@@ -1,15 +1,18 @@
-const _ = require('lodash');
-const ActiveConnector = require('../../connector/active');
+import ActiveConnector from '../../connector/active.js';
 
 const FAMILY = {
   1: 4,
   2: 6
 };
 
-module.exports = {
+export default {
   directive: 'EPRT',
   handler: function ({log, command} = {}) {
-    const [, protocol, ip, port] = _.chain(command).get('arg', '').split('|').value();
+    const arg = (command && command.arg) || '';
+    const parts = arg.split('|');
+    const protocol = parts[1];
+    const ip = parts[2];
+    const port = parts[3];
     const family = FAMILY[protocol];
     if (!family) return this.reply(504, 'Unknown network protocol');
 

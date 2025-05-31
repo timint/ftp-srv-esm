@@ -1,11 +1,9 @@
-const Promise = require('bluebird');
-const PassiveConnector = require('../../connector/passive');
-const {isLocalIP} = require('../../helpers/is-local');
+import PassiveConnector from '../../connector/passive.js';
 
-module.exports = {
+export default {
   directive: 'PASV',
   handler: function ({log} = {}) {
-    if (!this.server.options.pasv_url) {
+    if (!this.server.options.pasv_hostname) {
       return this.reply(502);
     }
 
@@ -13,13 +11,11 @@ module.exports = {
     return this.connector.setupServer()
     .then((server) => {
       const {port} = server.address();
-      let pasvAddress = this.server.options.pasv_url;
+      let pasvAddress = this.server.options.pasv_hostname;
       if (typeof pasvAddress === "function") {
-        return Promise.try(() => pasvAddress(this.ip))
+        return Promise.resolve().then(() => pasvAddress(this.ip))
           .then((address) => ({address, port}));
       }
-      // Allow connecting from local
-      if (isLocalIP(this.ip)) pasvAddress = this.ip;
       return {address: pasvAddress, port};
     })
     .then(({address, port}) => {

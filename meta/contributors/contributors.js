@@ -1,6 +1,6 @@
-const {get} = require('https');
+import https from 'https';
 
-get('https://api.github.com/repos/trs/ftp-srv/contributors', {
+https.get('https://api.github.com/repos/trs/ftp-srv-esm/contributors', {
   headers: {
     'User-Agent': 'Chrome'
   }

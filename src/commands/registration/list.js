@@ -1,10 +1,9 @@
-const _ = require('lodash');
-const Promise = require('bluebird');
-const getFileStat = require('../../helpers/file-stat');
+import getFileStat from '../../helpers/file-stat.js';
 
 // http://cr.yp.to/ftp/list.html
 // http://cr.yp.to/ftp/list/eplf.html
-module.exports = {
+
+export default {
   directive: 'LIST',
   handler: function ({log, command} = {}) {
     if (!this.fs) return this.reply(550, 'File system not instantiated');
@@ -13,37 +12,40 @@ module.exports = {
 
     const simple = command.directive === 'NLST';
 
-    const path = command.arg || '.';
+    // Parse command arguments: ignore options (starting with '-')
+    let path = '.';
+    if (command.arg) {
+      // Split by spaces, filter out options
+      const args = command.arg.split(/\s+/).filter(Boolean);
+      const nonOption = args.find(arg => !arg.startsWith('-'));
+      if (nonOption) path = nonOption;
+    }
     return this.connector.waitForConnection()
-    .tap(() => this.commandSocket.pause())
-    .then(() => Promise.try(() => this.fs.get(path)))
-    .then((stat) => stat.isDirectory() ? Promise.try(() => this.fs.list(path)) : [stat])
+    .then(() => { this.commandSocket.pause(); })
+    .then(() => this.fs.get(path))
+    .then((stat) => stat.isDirectory() ? this.fs.list(path) : [stat])
     .then((files) => {
-      const getFileMessage = (file) => {
-        if (simple) return file.name;
-        return getFileStat(file, _.get(this, 'server.options.file_format', 'ls'));
-      };
+      this.reply(150, `Accepted data connection, returning ${files.length} file(s)`);
 
-      return Promise.try(() => files.map((file) => {
-        const message = getFileMessage(file);
-        return {
-          raw: true,
-          message,
-          socket: this.connector.socket
-        };
-      }));
+      if (!files) {
+        return this.reply({ raw: true, socket: this.connector.socket, useEmptyMessage: true});
+      }
+
+      // Build a single string with all file entries separated by \r\n
+      const message = files.map((file) => {
+        if (simple) return file.name;
+        const fileFormat = this?.server?.options?.list_format ?? 'ls';
+        return getFileStat(file, fileFormat);
+      }).join('\r\n');
+
+      return this.reply({ raw: true, socket: this.connector.socket }, message);
     })
-    .tap(() => this.reply(150))
-    .then((fileList) => {
-      if (fileList.length) return this.reply({}, ...fileList);
-      return this.reply({socket: this.connector.socket, useEmptyMessage: true});
-    })
-    .tap(() => this.reply(226))
-    .catch(Promise.TimeoutError, (err) => {
-      log.error(err);
-      return this.reply(425, 'No connection established');
-    })
+    .then(() => this.reply(226))
     .catch((err) => {
+      if (err && err.name === 'TimeoutError') {
+        log.error(err);
+        return this.reply(425, 'No connection established');
+      }
       log.error(err);
       return this.reply(451, err.message || 'No directory');
     })

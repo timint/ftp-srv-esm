@@ -1,12 +1,9 @@
-const net = require('net');
-const tls = require('tls');
-const ip = require('ip');
-const Promise = require('bluebird');
+import net from 'net';
+import tls from 'tls';
+import Connector from './base.js';
+import errors from '../errors.js';
 
-const Connector = require('./base');
-const errors = require('../errors');
-
-const CONNECT_TIMEOUT = 30 * 1000;
+const CONNECT_TIMEOUT = 30e3;
 
 class Passive extends Connector {
   constructor(connection) {
@@ -14,18 +11,22 @@ class Passive extends Connector {
     this.type = 'passive';
   }
 
-  waitForConnection({timeout = 5000, delay = 50} = {}) {
+  waitForConnection({timeout = 5e3, delay = 250} = {}) {
     if (!this.dataServer) return Promise.reject(new errors.ConnectorError('Passive server not setup'));
 
     const checkSocket = () => {
       if (this.dataServer && this.dataServer.listening && this.dataSocket && this.dataSocket.connected) {
         return Promise.resolve(this.dataSocket);
       }
-      return Promise.resolve().delay(delay)
-      .then(() => checkSocket());
+
+      return new Promise((resolve) => setTimeout(resolve, delay))
+        .then(() => checkSocket());
     };
 
-    return checkSocket().timeout(timeout);
+    return Promise.race([
+      checkSocket(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('TimeoutError')), timeout))
+    ]);
   }
 
   setupServer() {
@@ -36,11 +37,13 @@ class Passive extends Connector {
       let idleServerTimeout;
 
       const connectionHandler = (socket) => {
-        if (!ip.isEqual(this.connection.commandSocket.remoteAddress, socket.remoteAddress)) {
-          this.log.error({
+        // Normalize IPv6-mapped IPv4 addresses for comparison
+        const normalizeAddress = addr => addr.replace(/^::ffff:/, '');
+        if (normalizeAddress(this.connection.commandSocket.remoteAddress) !== normalizeAddress(socket.remoteAddress)) {
+          this.log.error('Connecting addresses do not match', {
             pasv_connection: socket.remoteAddress,
             cmd_connection: this.connection.commandSocket.remoteAddress
-          }, 'Connecting addresses do not match');
+          });
 
           socket.destroy();
           return this.connection.reply(550, 'Remote addresses do not match')
@@ -48,7 +51,10 @@ class Passive extends Connector {
         }
         clearTimeout(idleServerTimeout);
 
-        this.log.trace({port, remoteAddress: socket.remoteAddress}, 'Passive connection fulfilled.');
+        this.log.debug('Passive connection fulfilled.', {
+          port: port,
+          remoteAddress: socket.remoteAddress
+        });
 
         this.dataSocket = socket;
         this.dataSocket.on('error', (err) => this.server && this.server.emit('client-error', {connection: this.connection, context: 'dataSocket', error: err}));
@@ -65,7 +71,7 @@ class Passive extends Connector {
 
       this.dataServer.on('error', (err) => this.server && this.server.emit('client-error', {connection: this.connection, context: 'dataServer', error: err}));
       this.dataServer.once('close', () => {
-        this.log.trace('Passive server closed');
+        this.log.debug('Passive server closed');
         this.end();
       });
 
@@ -81,17 +87,18 @@ class Passive extends Connector {
           else {
             idleServerTimeout = setTimeout(() => this.closeServer(), CONNECT_TIMEOUT);
 
-            this.log.debug({port}, 'Passive connection listening');
+            this.log.debug('Passive connection listening', {port: port});
             resolve(this.dataServer);
           }
         });
       });
     })
     .catch((error) => {
-      this.log.trace(error.message);
+      this.log.debug(error.message, error);
       throw error;
     });
   }
 
 }
-module.exports = Passive;
+
+export default Passive;

@@ -1,9 +1,8 @@
-const {Socket} = require('net');
-const tls = require('tls');
-const ip = require('ip');
-const Promise = require('bluebird');
-const Connector = require('./base');
-const {SocketError} = require('../errors');
+import tls from 'tls';
+import * as ip from 'neoip'
+import { Socket } from 'net';
+import Connector from './base.js';
+import { SocketError } from '../errors.js';
 
 class Active extends Connector {
   constructor(connection) {
@@ -11,16 +10,21 @@ class Active extends Connector {
     this.type = 'active';
   }
 
-  waitForConnection({timeout = 5000, delay = 250} = {}) {
+  waitForConnection({timeout = 5e3, delay = 250} = {}) {
     const checkSocket = () => {
       if (this.dataSocket && this.dataSocket.connected) {
         return Promise.resolve(this.dataSocket);
       }
-      return Promise.resolve().delay(delay)
-      .then(() => checkSocket());
+      // Native delay implementation
+      return new Promise((resolve) => setTimeout(resolve, delay))
+        .then(() => checkSocket());
     };
 
-    return checkSocket().timeout(timeout);
+    // Native timeout implementation
+    return Promise.race([
+      checkSocket(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('TimeoutError')), timeout))
+    ]);
   }
 
   setupConnection(host, port, family = 4) {
@@ -51,4 +55,5 @@ class Active extends Connector {
     });
   }
 }
-module.exports = Active;
+
+export default Active;

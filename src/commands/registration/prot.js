@@ -1,12 +1,10 @@
-const _ = require('lodash');
-
-module.exports = {
+export default {
   directive: 'PROT',
   handler: function ({command} = {}) {
     if (!this.secure) return this.reply(202, 'Not supported');
     if (!this.bufferSize && typeof this.bufferSize !== 'number') return this.reply(503);
 
-    switch (_.toUpper(command.arg)) {
+    switch ((command?.arg || '').toUpperCase()) {
       case 'P': return this.reply(200, 'OK');
       case 'C':
       case 'S':

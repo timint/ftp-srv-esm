@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   directive: 'MODE',
   handler: function ({command} = {}) {
     return this.reply(/^S$/i.test(command.arg) ? 200 : 504);

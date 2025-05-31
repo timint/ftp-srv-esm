@@ -9,8 +9,8 @@ export class FileSystem {
 	readonly cwd: string;
 
     constructor(connection: FtpConnection, {root, cwd}?: {
-        root: any;
-        cwd: any;
+      root: any;
+      cwd: any;
     });
 
     currentDirectory(): string;
@@ -21,13 +21,18 @@ export class FileSystem {
 
     chdir(path?: string): Promise<string>;
 
+    protected _resolvePath(path?: string): {
+      clientPath: string,
+      fsPath: string
+    };
+
     write(fileName: string, {append, start}?: {
-        append?: boolean;
-        start?: any;
+      append?: boolean;
+      start?: any;
     }): any;
 
     read(fileName: string, {start}?: {
-        start?: any;
+      start?: any;
     }): Promise<any>;
 
     delete(path: string): Promise<any>;
@@ -87,48 +92,47 @@ export class FtpConnection extends EventEmitter {
 	close (code: number, message: number): Promise<any>
 	login (username: string, password: string): Promise<any>
 	reply (options: number | Object, ...letters: Array<any>): Promise<any>
-
 }
 
 export interface FtpServerOptions {
-    url?: string,
-    pasv_min?: number,
-    pasv_max?: number,
-    pasv_url?: string,
-    greeting?: string | string[],
-    tls?: tls.SecureContextOptions | false,
-    anonymous?: boolean,
-    blacklist?: Array<string>,
-    whitelist?: Array<string>,
-    file_format?: (stat: Stats) => string | Promise<string> | "ls" | "ep",
+  url?: string,
+  pasv_min?: number,
+  pasv_max?: number,
+  pasv_hostname?: string,
+  greeting?: string | string[],
+  tls?: tls.SecureContextOptions | false,
+  anonymous?: boolean,
+  blacklist?: Array<string>,
+  whitelist?: Array<string>,
+  list_format?: (stat: Stats) => string | Promise<string> | "ls" | "ep",
 	log?: any,
 	timeout?: number
 }
 
 export class FtpServer extends EventEmitter {
-    constructor(options?: FtpServerOptions);
+  constructor(options?: FtpServerOptions);
 
-    readonly isTLS: boolean;
+  readonly isTLS: boolean;
 
-    listen(): any;
+  listen(): any;
 
-    emitPromise(action: any, ...data: any[]): Promise<any>;
+  emitPromise(action: any, ...data: any[]): Promise<any>;
 
-    // emit is exported from super class
+  // emit is exported from super class
 
-    setupTLS(_tls: boolean): boolean | {
-      cert: string;
-      key: string;
-      ca: string
-    };
+  setupTLS(_tls: boolean): boolean | {
+    cert: string;
+    key: string;
+    ca: string
+  };
 
-    setupGreeting(greet: string): string[];
+  setupGreeting(greet: string): string[];
 
-    setupFeaturesMessage(): string;
+  setupFeaturesMessage(): string;
 
-    disconnectClient(id: string): Promise<any>;
+  disconnectClient(id: string): Promise<any>;
 
-    close(): any;
+  close(): any;
 
 	on(event: "login", listener: (
 		data: {
@@ -137,12 +141,12 @@ export class FtpServer extends EventEmitter {
 			password: string
 		},
 		resolve: (config: {
-            fs?: FileSystem,
-            root?: string,
-            cwd?: string,
-            blacklist?: Array<string>,
-            whitelist?: Array<string>
-        }) => void,
+      fs?: FileSystem,
+      root?: string,
+      cwd?: string,
+      blacklist?: Array<string>,
+      whitelist?: Array<string>
+    }) => void,
 		reject: (err?: Error) => void
   ) => void): this;
 

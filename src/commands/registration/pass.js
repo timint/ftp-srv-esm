@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   directive: 'PASS',
   handler: function ({log, command} = {}) {
     if (!this.username) return this.reply(503);

@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   directive: 'ALLO',
   handler: function () {
     return this.reply(202);

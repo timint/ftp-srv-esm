@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   directive: 'ABOR',
   handler: function () {
     return this.connector.waitForConnection()

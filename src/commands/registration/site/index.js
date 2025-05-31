@@ -1,16 +1,13 @@
-const Promise = require('bluebird');
-const _ = require('lodash');
+import registry from './registry.js';
 
-const registry = require('./registry');
-
-module.exports = {
+export default {
   directive: 'SITE',
   handler: function ({log, command} = {}) {
-    const rawSubCommand = _.get(command, 'arg', '');
+    const rawSubCommand = command?.arg ?? '';
     const subCommand = this.commands.parse(rawSubCommand);
     const subLog = log.child({subverb: subCommand.directive});
 
-    if (!registry.hasOwnProperty(subCommand.directive)) return this.reply(502);
+    if (!Object.prototype.hasOwnProperty.call(registry, subCommand.directive)) return this.reply(502);
 
     const handler = registry[subCommand.directive].handler.bind(this);
     return Promise.resolve(handler({log: subLog, command: subCommand}));

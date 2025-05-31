@@ -1,16 +1,17 @@
-const {expect} = require('chai');
-const Promise = require('bluebird');
-const bunyan = require('bunyan');
-const sinon = require('sinon');
-
-const FtpCommands = require('../../src/commands');
+import { expect } from 'chai';
+import sinon from 'sinon';
+import winston from 'winston';
+import FtpCommands from '../../src/commands/index.js';
 
 describe('FtpCommands', function () {
   let sandbox;
   let commands;
   let mockConnection = {
     authenticated: false,
-    log: bunyan.createLogger({name: 'FtpCommands'}),
+    log: winston.createLogger({
+      name: 'FtpCommands',
+      transports: [new winston.transports.Console({ level: 'silly' })]
+    }),
     reply: () => Promise.resolve({}),
     server: {
       options: {
@@ -20,7 +21,7 @@ describe('FtpCommands', function () {
   };
 
   beforeEach(() => {
-    sandbox = sinon.sandbox.create().usingPromise(Promise);
+    sandbox = sinon.createSandbox();
 
     commands = new FtpCommands(mockConnection);
 
@@ -28,6 +29,7 @@ describe('FtpCommands', function () {
     sandbox.spy(commands, 'handle');
     sandbox.spy(commands, 'parse');
   });
+
   afterEach(() => {
     sandbox.restore();
   });

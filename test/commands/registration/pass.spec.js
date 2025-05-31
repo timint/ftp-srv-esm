@@ -1,22 +1,26 @@
-const bunyan = require('bunyan');
-const {expect} = require('chai');
-const sinon = require('sinon');
+import winston from 'winston';
+import { expect } from 'chai';
+import sinon from 'sinon';
+import _cmd from '../../../src/commands/registration/pass.js';
 
 const CMD = 'PASS';
+let log = winston.createLogger({
+  name: CMD,
+  format: winston.format.simple(),
+  transports: [new winston.transports.Console({ level: 'silly' })]
+});
 describe(CMD, function () {
   let sandbox;
-  let log = bunyan.createLogger({name: CMD});
   const mockClient = {
     reply: () => {},
     login: () => {},
     server: {options: {anonymous: false}},
     username: 'anonymous'
   };
-  const cmdFn = require(`../../../src/commands/registration/${CMD.toLowerCase()}`).handler.bind(mockClient);
+  const cmdFn = _cmd.handler.bind(mockClient);
 
   beforeEach(() => {
-    sandbox = sinon.sandbox.create().usingPromise(Promise);
-
+    sandbox = sandbox = sinon.createSandbox();
     sandbox.stub(mockClient, 'reply').resolves();
     sandbox.stub(mockClient, 'login').resolves();
   });

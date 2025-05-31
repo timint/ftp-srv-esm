@@ -1,12 +1,11 @@
-const _ = require('lodash');
-const ActiveConnector = require('../../connector/active');
+import ActiveConnector from '../../connector/active.js';
 
-module.exports = {
+export default {
   directive: 'PORT',
   handler: function ({log, command} = {}) {
     this.connector = new ActiveConnector(this);
 
-    const rawConnection = _.get(command, 'arg', '').split(',');
+    const rawConnection = (command?.arg ?? '').split(',');
     if (rawConnection.length !== 6) return this.reply(425);
 
     const ip = rawConnection.slice(0, 4).map((b) => parseInt(b)).join('.');

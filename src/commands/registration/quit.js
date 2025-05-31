@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   directive: 'QUIT',
   handler: function () {
     return this.close(221, 'Client called QUIT');
