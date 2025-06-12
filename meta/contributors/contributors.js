@@ -1,6 +1,6 @@
 import https from 'https';
 
-https.get('https://api.github.com/repos/trs/ftp-srv-esm/contributors', {
+https.get('https://api.github.com/repos/timint/ftp-srv-esm/contributors', {
   headers: {
     'User-Agent': 'Chrome'
   }
