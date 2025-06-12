@@ -1,10 +1,7 @@
 # ftp-srv-esm
 
-Modern, extensible FTP Server. Forked from on the 4.6.3 version of [ftp-srv](https://github.com/QuorumDMS/ftp-srv).
-How is it different? Code rewritten for ESM, and several outdated and vulnerable npm dependencies.
-
-## Overview
-`ftp-srv-esm` is a modern and extensible FTP server designed to be simple yet configurable.
+Modern, extensible FTP Server. Based on [ftp-srv](https://github.com/QuorumDMS/ftp-srv) 4.6.3.
+How is it different? Code has been rewritten for ESM. Several outdated and/or vulnerable npm dependencies has been updated or removed.
 
 ## Features
 - Extensible [file systems](#file-system) per connection
@@ -19,7 +16,7 @@ How is it different? Code rewritten for ESM, and several outdated and vulnerable
 
 ```js
 // Quick start, create an active ftp server.
-const FtpSrv = require('ftp-srv-esm');
+import FtpSrv from 'ftp-srv-esm';
 
 const port=21;
 const ftpServer = new FtpSrv({
@@ -56,35 +53,37 @@ __Default:__ `"ftp://127.0.0.1:21"`
 - A function which takes one parameter containing the remote IP address of the FTP client. This can be useful when the user wants to return a different IP address depending if the user is connecting from Internet or from an LAN address.
 Example:
  ```js
-const { networkInterfaces } = require('os');
-const { Netmask } = require('netmask');
+import os from 'os';
+import { Netmask } from 'netmask';
+import FtpSrv from 'ftp-srv-esm';
 
-const nets = networkInterfaces();
+const nets = os.networkInterfaces();
 function getNetworks() {
-    let networks = {};
-    for (const name of Object.keys(nets)) {
-        for (const net of nets[name]) {
-            if (net.family === 'IPv4' && !net.internal) {
-                networks[net.address + "/24"] = net.address
-            }
-        }
+  let networks = {};
+  for (const name of Object.keys(nets)) {
+    for (const net of nets[name]) {
+      if (net.family === 'IPv4' && !net.internal) {
+        networks[net.address + "/24"] = net.address;
+      }
     }
-    return networks;
+  }
+  return networks;
 }
 
 const resolverFunction = (address) => {
-    // const networks = {
-    //     '$GATEWAY_IP/32': `${public_ip}`,
-    //     '10.0.0.0/8'    : `${lan_ip}`
-    // }
-    const networks = getNetworks();
-    for (const network in networks) {
-        if (new Netmask(network).contains(address)) {
-            return networks[network];
-        }
+  // const networks = {
+  //     '$GATEWAY_IP/32': `${public_ip}`,
+  //     '10.0.0.0/8'    : `${lan_ip}`
+  // }
+  const networks = getNetworks();
+  for (const network in networks) {
+    if (new Netmask(network).contains(address)) {
+      return networks[network];
     }
-    return "127.0.0.1";
-}
+  }
+  return '127.0.0.1';
+};
+```
 
 new FtpSrv({pasv_hostname: resolverFunction});
 ```
@@ -213,7 +212,7 @@ The `FtpSrv` class extends the [node net.Server](https://nodejs.org/api/net.html
 
 ### `client-error`
 ```js
-ftpServer.on('client-error', ({connection, context, error}) => { ... });
+import FtpSrv from 'ftp-srv-esm';.on('client-error', ({connection, context, error}) => { ... });
 ```
 
 Occurs when an error arises in the client connection.
@@ -324,7 +323,7 @@ Each connection can set it's own file system based on the user.
 
 The default file system is exported and can be extended as needed:
 ```js
-const {FtpSrv, FileSystem} = require('ftp-srv-esm');
+import {FtpSrv, FileSystem} from 'ftp-srv-esm';
 
 class MyFileSystem extends FileSystem {
   constructor() {
