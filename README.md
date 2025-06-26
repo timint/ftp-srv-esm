@@ -1,16 +1,17 @@
 # ftp-srv-esm
 
 Modern, extensible FTP Server. Based on [ftp-srv](https://github.com/QuorumDMS/ftp-srv) 4.6.3.
-How is it different? Code has been rewritten for ESM. Several outdated and/or vulnerable npm dependencies has been updated or removed.
+How is it different from v4? Code has been rewritten for ECMAScript Modules (ESM). Several outdated and/or vulnerable npm dependencies has been updated or removed.
 
 ## Features
 - Extensible [file systems](#file-system) per connection
 - Passive and active transfers
+- Automatic WAN IP detection
 - [Explicit](https://en.wikipedia.org/wiki/FTPS#Explicit) & [Implicit](https://en.wikipedia.org/wiki/FTPS#Implicit) TLS connections
 - Promise based API
 
 ## Install
-`npm install ftp-srv-esm --save`
+`npm install ftp-srv-esm`
 
 ## Usage
 
@@ -18,21 +19,20 @@ How is it different? Code has been rewritten for ESM. Several outdated and/or vu
 // Quick start, create an active ftp server.
 import FtpSrv from 'ftp-srv-esm';
 
-const port=21;
 const ftpServer = new FtpSrv({
-    url: "ftp://0.0.0.0:" + port,
-    anonymous: true
+  url: "ftp://0.0.0.0:21,
+  anonymous: false
 });
 
 ftpServer.on('login', ({ connection, username, password }, resolve, reject) => {
-    if(username === 'anonymous' && password === 'anonymous'){
-        return resolve({ root:"/" });
-    }
-    return reject(new errors.GeneralError('Invalid username or password', 401));
+  if(username === 'john' && password === 'doe'){
+    return resolve({ root: '/' });
+  }
+  return reject(new errors.GeneralError('Invalid username or password', 401));
 });
 
 ftpServer.listen().then(() => {
-    console.log('FTP server is starting...')
+  console.log('FTP server is starting...')
 });
 ```
 
@@ -90,7 +90,7 @@ new FtpSrv({pasv_hostname: resolverFunction});
 
 - A static IP address (ie. an external WAN **IP address** that the FTP server is bound to). In this case, only connections from localhost are handled differently returning `127.0.0.1` to the client.
 
-If not provided, clients can only connect using an `Active` connection.
+If not provided, the server will attempt to fetch and use the WAN IP for passive mode transfers.
 
 #### `pasv_min`
 The starting port to accept passive connections.

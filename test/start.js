@@ -17,7 +17,7 @@ const server = new FtpServer({
   url: 'ftp://127.0.0.1:8880',
   //pasv_hostname: '', // WAN IP will be used if not set
   pasv_min: 8881,
-  greeting: ['Welcome', 'to', 'the', 'jungle!'],
+  greeting: ['Welcome! Drop your files, not your expectations.'],
   tls: {
     key: readFileSync(`test/cert/server.key`),
     cert: readFileSync(`test/cert/server.crt`),
@@ -25,7 +25,7 @@ const server = new FtpServer({
   },
   //list_format: 'ls', // Defaults to 'ls' for standard Unix-like format
   list_format: 'ep', // 'ep' format for EPLF (Extended Path Listing Format)
-  anonymous: 'sillyrabbit'
+  anonymous: true
 });
 
 server.on('login', ({username, password}, resolve, reject) => {
