@@ -35,7 +35,12 @@ function setupYargs() {
       boolean: true,
       default: false
     })
-    .option('pasv-url', {
+    .option('pasv-hostname', {
+      describe: 'Hostname to provide for passive connections',
+      type: 'string',
+      alias: 'pasv_hostname'
+    })
+    .option('pasv-url', { // Deprecated alias for pasv_hostname
       describe: 'URL to provide for passive connections',
       type: 'string',
       alias: 'pasv_hostname'

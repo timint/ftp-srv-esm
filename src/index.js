@@ -95,6 +95,11 @@ class FtpServer extends EventEmitter {
   listen() {
     if (!this.options.pasv_hostname) {
       this.log.warn('Passive URL not set. Passive connections not available.');
+      if (this.options.pasv_url) {
+        this.options.pasv_hostname = this.options.pasv_url;
+      } else {
+          this.log.warn('Passive connections not available.');
+      }
     }
 
     return new Promise((resolve, reject) => {
