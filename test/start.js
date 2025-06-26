@@ -15,7 +15,7 @@ const server = new FtpServer({
     transports: [new winston.transports.Console({ level: 'silly' })]
   }),
   url: 'ftp://127.0.0.1:8880',
-  pasv_hostname: '127.0.0.1',
+  //pasv_hostname: '', // WAN IP will be used if not set
   pasv_min: 8881,
   greeting: ['Welcome', 'to', 'the', 'jungle!'],
   tls: {

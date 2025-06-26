@@ -92,13 +92,24 @@ class FtpServer extends EventEmitter {
     return this.url.protocol === 'ftps:' && this.options.tls;
   }
 
-  listen() {
+  async listen() {
     if (!this.options.pasv_hostname) {
-      this.log.warn('Passive URL not set. Passive connections not available.');
       if (this.options.pasv_url) {
         this.options.pasv_hostname = this.options.pasv_url;
       } else {
+        this.log.warn('Passive hostname is not set. Attempting to determine WAN IP instead.');
+        try {
+          const response = await fetch('https://checkip.amazonaws.com');
+          if (!response.ok) {
+            throw new Error(`Unexpected response: ${response.status} ${response.statusText}`);
+          }
+          const wanIp = (await response.text()).trim();
+          this.log && this.log.info(`Detected WAN IP: ${wanIp}`);
+          this.options.pasv_hostname = wanIp;
+        } catch (err) {
+          this.log && this.log.error(`Error fetching WAN IP: ${err.message}`);
           this.log.warn('Passive connections not available.');
+        }
       }
     }
 
@@ -110,7 +121,10 @@ class FtpServer extends EventEmitter {
         this.log.info('Listening', {
           protocol: this.url.protocol.replace(/\W/g, ''),
           ip: this.url.hostname,
-          port: this.url.port
+          port: this.url.port,
+          pasv_hostname: this.options.pasv_hostname,
+          pasv_min: this.options.pasv_min,
+          pasv_max: this.options.pasv_max
         });
         resolve('Listening');
       });
