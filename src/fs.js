@@ -69,20 +69,22 @@ class FileSystem {
     return this.currentDirectory();
   }
 
-  list(path = '.') {
+  list(path = '.', { showHidden = false } = {}) {
     const {fsPath} = this._resolvePath(path);
     const fileNames = readdirSync(fsPath);
-    const results = fileNames.map((fileName) => {
-      const filePath = nodePath.join(fsPath, fileName);
-      try {
-        accessSync(filePath, constants.F_OK);
-        const statObj = statSync(filePath);
-        statObj.name = fileName;
-        return statObj;
-      } catch {
-        return null;
-      }
-    });
+    const results = fileNames
+      .filter(fileName => showHidden || !fileName.startsWith('.'))
+      .map((fileName) => {
+        const filePath = nodePath.join(fsPath, fileName);
+        try {
+          accessSync(filePath, constants.F_OK);
+          const statObj = statSync(filePath);
+          statObj.name = fileName;
+          return statObj;
+        } catch {
+          return null;
+        }
+      });
     return results.filter(Boolean);
   }
 

@@ -12,18 +12,25 @@ export default {
 
     const simple = command.directive === 'NLST';
 
-    // Parse command arguments: ignore options (starting with '-')
+    // Parse command arguments: extract options and path
     let path = '.';
+    let showHidden = false;
     if (command.arg) {
-      // Split by spaces, filter out options
+      // Split by spaces, filter out empty strings
       const args = command.arg.split(/\s+/).filter(Boolean);
+
+      // Check for options
+      const options = args.filter(arg => arg.startsWith('-'));
+      showHidden = options.some(opt => opt.includes('a')); // -a or -al
+
+      // Find the path (non-option argument)
       const nonOption = args.find(arg => !arg.startsWith('-'));
       if (nonOption) path = nonOption;
     }
     return this.connector.waitForConnection()
     .then(() => { this.commandSocket.pause(); })
     .then(() => this.fs.get(path))
-    .then((stat) => stat.isDirectory() ? this.fs.list(path) : [stat])
+    .then((stat) => stat.isDirectory() ? this.fs.list(path, { showHidden }) : [stat])
     .then((files) => {
       this.reply(150, `Accepted data connection, returning ${files.length} file(s)`);
 
