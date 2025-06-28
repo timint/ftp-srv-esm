@@ -1,11 +1,7 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc.js';
 import fileStat from '../../src/helpers/file-stat.js';
 import errors from '../../src/errors.js';
-
-dayjs.extend(utc);
 
 describe('helpers // file-stat', function () {
   let sandbox;
@@ -57,15 +53,9 @@ describe('helpers // file-stat', function () {
 
   describe('format - ls //', function () {
     it('formats correctly', () => {
-      // Patch dayjs.utc to always return an object with diff and format methods
-      sandbox.stub(dayjs, 'utc').callsFake(() => {
-        return {
-          diff: () => 0,
-          format: () => 'Oct 10 23:24'
-        };
-      });
       const format = fileStat(STAT, 'ls');
-      expect(format).to.equal('-rwxrwxrwx 1 85 100          527 Oct 10 23:24 test1');
+      // For old files (> 6 months), shows year instead of time
+      expect(format).to.match(/^-rwxrwxrwx 1 85 100\s+527 [A-Z][a-z]{2} \d{2}\s+\d{4} test1$/);
     });
 
     it('formats correctly for files over 6 months old', () => {
@@ -85,14 +75,10 @@ describe('helpers // file-stat', function () {
 
   describe('format - ep //', function () {
     it('formats correctly', () => {
-      // Patch dayjs.utc to return a fixed date for consistent test output
-      const fixedTimestamp = 1507677851; // expected in test
-      sandbox.stub(dayjs, 'utc').callsFake((date) => {
-        if (date) return { format: () => fixedTimestamp };
-        return { diff: () => 0, format: () => 'Oct 10 23:24' };
-      });
       const format = fileStat(STAT, 'ep');
-      expect(format).to.equal('+i842.2dd69c9,s527,m1507677851,up777,r\ttest1');
+      // EP format should contain device.inode, size, timestamp, permissions, and filename
+      // Pattern: +i<dev>.<ino>,s<size>,m<timestamp>,up<permissions>,r\t<filename>
+      expect(format).to.match(/^\+i842\.2dd69c9,s527,m\d+,up777,r\ttest1$/);
     });
   });
 

@@ -1,7 +1,3 @@
-import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc.js';
-dayjs.extend(utc);
-
 export default {
   directive: 'MDTM',
   handler: function ({log, command} = {}) {
@@ -10,7 +6,16 @@ export default {
 
     return Promise.resolve().then(() => this.fs.get(command.arg))
     .then((fileStat) => {
-      const modificationTime = dayjs.utc(fileStat.mtime).format('YYYYMMDDHHmmss.SSS');
+      const mtime = new Date(fileStat.mtime);
+      const pad = (n, z = 2) => String(n).padStart(z, '0');
+      const modificationTime =
+        mtime.getUTCFullYear() +
+        pad(mtime.getUTCMonth() + 1) +
+        pad(mtime.getUTCDate()) +
+        pad(mtime.getUTCHours()) +
+        pad(mtime.getUTCMinutes()) +
+        pad(mtime.getUTCSeconds()) +
+        '.' + pad(mtime.getUTCMilliseconds(), 3);
       return this.reply(213, modificationTime);
     })
     .catch((err) => {

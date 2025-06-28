@@ -27,7 +27,6 @@
   },
   "dependencies": {
     "@eslint/js": "^9.28.0",
-    "dayjs": "^1.11.13",
     "neoip": "^3.0.1",
     "winston": "^3.17.0",
     "yargs": "^18.0.0"

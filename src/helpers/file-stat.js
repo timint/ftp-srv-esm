@@ -1,6 +1,3 @@
-import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc.js';
-dayjs.extend(utc);
 import errors from '../errors.js';
 
 const FORMATS = {
@@ -17,10 +14,28 @@ export default function fileStat(fileStat, format = 'ls') {
 };
 
 function ls(fileStat) {
-  const now = dayjs.utc();
-  const mtime = dayjs.utc(new Date(fileStat.mtime));
-  const timeDiff = now.diff(mtime, 'month');
-  const dateFormat = timeDiff < 6 ? 'MMM DD HH:mm' : 'MMM DD  YYYY';
+  const now = new Date();
+  const mtime = new Date(fileStat.mtime);
+  const timeDiff = Math.floor((now - mtime) / (1000 * 60 * 60 * 24 * 30)); // months
+
+  // Format date - if older than 6 months, show year; otherwise show time
+  let dateStr;
+  if (timeDiff < 6) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const month = months[mtime.getMonth()];
+    const day = String(mtime.getDate()).padStart(2, ' ');
+    const hours = String(mtime.getHours()).padStart(2, '0');
+    const minutes = String(mtime.getMinutes()).padStart(2, '0');
+    dateStr = `${month} ${day} ${hours}:${minutes}`;
+  } else {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const month = months[mtime.getMonth()];
+    const day = String(mtime.getDate()).padStart(2, ' ');
+    const year = mtime.getFullYear();
+    dateStr = `${month} ${day}  ${year}`;
+  }
 
   return [
     fileStat.mode ? [
@@ -39,7 +54,7 @@ function ls(fileStat) {
     fileStat.uid !== undefined ? fileStat.uid : 1,
     fileStat.gid !== undefined ? fileStat.gid : 1,
     fileStat.size !== undefined ? String(fileStat.size).padStart(12) : '            ',
-    String(mtime.format(dateFormat)).padStart(12),
+    String(dateStr).padStart(12),
     fileStat.name
   ].join(' ');
 }
@@ -48,7 +63,7 @@ function ep(fileStat) {
   const facts = [
     fileStat.dev && fileStat.ino ? `i${fileStat.dev.toString(16)}.${fileStat.ino.toString(16)}` : null,
     fileStat.size ? `s${fileStat.size}` : null,
-    fileStat.mtime ? `m${dayjs.utc(new Date(fileStat.mtime)).format('X')}` : null,
+    fileStat.mtime ? `m${Math.floor(new Date(fileStat.mtime).getTime() / 1000)}` : null,
     fileStat.mode ? `up${(fileStat.mode & 4095).toString(8)}` : null,
     fileStat.isDirectory() ? '/' : 'r'
   ].filter(Boolean).join(',');
