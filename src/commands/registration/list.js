@@ -25,6 +25,7 @@ export default {
       const nonOption = args.find(arg => !arg.startsWith('-'));
       if (nonOption) path = nonOption;
     }
+
     return this.connector.waitForConnection()
     .then(() => { this.commandSocket.pause(); })
     .then(() => this.fs.get(path))
@@ -36,15 +37,14 @@ export default {
         return this.reply({ raw: true, socket: this.connector.socket, useEmptyMessage: true});
       }
 
-      // Build a single string with all file entries separated by \r\n
-      const message = files.map((file) => {
-        if (simple) return file.name;
+      Promise.try(() => files.map((file) => {
         // Use connection-specific format if set via OPTS LIST, otherwise use server default
         const fileFormat = this.listFormat || this?.server?.options?.list_format || 'ls';
         return getFileStat(file, fileFormat);
-      }).join('\r\n');
-
-      return this.reply({ raw: true, socket: this.connector.socket }, message);
+      }))
+      .then((files) => {
+        this.reply({}, {raw: true, message: files.join('\r\n'), socket: this.connector.socket});
+      })
     })
     .then(() => this.reply(226))
     .catch((err) => {

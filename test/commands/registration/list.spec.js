@@ -118,7 +118,7 @@ describe(CMD, function () {
     return cmdFn({log, command: {directive: CMD}})
     .then(() => {
       expect(mockClient.reply.args[0][0]).to.equal(150);
-      expect(mockClient.reply.args[1].length).to.equal(3);
+      expect(mockClient.reply.args[1].length).to.equal(2);
       expect(mockClient.reply.args[1][1]).to.have.property('raw');
       expect(mockClient.reply.args[1][1]).to.have.property('message');
       expect(mockClient.reply.args[1][1]).to.have.property('socket');
