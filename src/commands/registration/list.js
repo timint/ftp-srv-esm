@@ -41,7 +41,8 @@ export default {
       // Build a single string with all file entries separated by \r\n
       const message = files.map((file) => {
         if (simple) return file.name;
-        const fileFormat = this?.server?.options?.list_format ?? 'ls';
+        // Use connection-specific format if set via OPTS LIST, otherwise use server default
+        const fileFormat = this.listFormat || this?.server?.options?.list_format || 'ls';
         return getFileStat(file, fileFormat);
       }).join('\r\n');
 

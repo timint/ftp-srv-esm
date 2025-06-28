@@ -1,6 +1,7 @@
 const OPTIONS = {
   UTF8: utf8,
-  'UTF-8': utf8
+  'UTF-8': utf8,
+  LIST: listOpts
 };
 
 export default {
@@ -12,6 +13,13 @@ export default {
     const option = _option ? _option.toUpperCase() : '';
 
     if (!Object.prototype.hasOwnProperty.call(OPTIONS, option)) return this.reply(501, 'Unknown option command');
+
+    // For LIST options, we need to consider both args and flags
+    if (option === 'LIST') {
+      const allArgs = [...args, ...(command.flags || [])];
+      return OPTIONS[option].call(this, allArgs);
+    }
+
     return OPTIONS[option].call(this, args);
   },
   syntax: '{{cmd}}',
@@ -33,4 +41,21 @@ function utf8([setting] = []) {
   this.encoding = encoding;
 
   return this.reply(200, `UTF8 encoding ${(setting || '').toLowerCase()}`);
+}
+
+function listOpts([setting] = []) {
+  const option = (setting || '').toUpperCase();
+
+  switch (option) {
+    case '-E':
+      // Enable EPLF (Extended Path Listing Format)
+      this.listFormat = 'ep';
+      return this.reply(200, 'EPLF format enabled');
+    case '-L':
+      // Enable standard Unix ls format (default)
+      this.listFormat = 'ls';
+      return this.reply(200, 'Standard format enabled');
+    default:
+      return this.reply(501, 'Unknown LIST option');
+  }
 }
