@@ -16,5 +16,8 @@ export default {
     });
   },
   syntax: '{{cmd}} [<protocol>]',
-  description: 'Initiate passive mode'
+  description: 'Initiate passive mode',
+  flags: {
+    feat: 'EPSV'
+  }
 };
