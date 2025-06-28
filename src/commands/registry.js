@@ -10,6 +10,7 @@ import help, { setHelpRegistry } from './registration/help.js';
 import list from './registration/list.js';
 import mdtm from './registration/mdtm.js';
 import mkd from './registration/mkd.js';
+import mlsd from './registration/mlsd.js';
 import mode from './registration/mode.js';
 import nlst from './registration/nlst.js';
 import noop from './registration/noop.js';
@@ -39,7 +40,7 @@ import eprt from './registration/eprt.js';
 import epsv from './registration/epsv.js';
 
 const commands = [
-  abor, allo, appe, auth, cdup, cwd, dele, feat, help, list, mdtm, mkd, mode,
+  abor, allo, appe, auth, cdup, cwd, dele, feat, help, list, mdtm, mkd, mlsd, mode,
   nlst, noop, opts, pass, pasv, port, pwd, quit, rest, retr, rmd, rnfr, rnto,
   site, size, stat, stor, stou, stru, syst, type, user, pbsz, prot, eprt, epsv
 ];

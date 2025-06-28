@@ -2,7 +2,8 @@ import errors from '../errors.js';
 
 const FORMATS = {
   ls,
-  ep
+  ep,
+  mlsd
 };
 
 export default function fileStat(fileStat, format = 'ls') {
@@ -68,4 +69,56 @@ function ep(fileStat) {
     fileStat.isDirectory() ? '/' : 'r'
   ].filter(Boolean).join(',');
   return `+${facts}\t${fileStat.name}`;
+}
+
+function mlsd(fileStat) {
+  // RFC 3659 MLSD format: facts separated by semicolon, followed by space and filename
+  const facts = [];
+
+  // Type fact (required)
+  if (fileStat.isDirectory()) {
+    facts.push('type=dir');
+  } else {
+    facts.push('type=file');
+  }
+
+  // Size fact
+  if (fileStat.size !== undefined) {
+    facts.push(`size=${fileStat.size}`);
+  }
+
+  // Modify fact (modification time)
+  if (fileStat.mtime) {
+    const mtime = new Date(fileStat.mtime);
+    const pad = (n, z = 2) => String(n).padStart(z, '0');
+    const timeStr =
+      mtime.getUTCFullYear() +
+      pad(mtime.getUTCMonth() + 1) +
+      pad(mtime.getUTCDate()) +
+      pad(mtime.getUTCHours()) +
+      pad(mtime.getUTCMinutes()) +
+      pad(mtime.getUTCSeconds()) +
+      '.' + pad(mtime.getUTCMilliseconds(), 3);
+    facts.push(`modify=${timeStr}`);
+  }
+
+  // Perm fact (permissions)
+  if (fileStat.mode !== undefined) {
+    const perms = [];
+    if (fileStat.isDirectory()) {
+      if (fileStat.mode & 256) perms.push('e'); // enter
+      if (fileStat.mode & 128) perms.push('c'); // create
+      if (fileStat.mode & 64) perms.push('d'); // delete
+      perms.push('l'); // list (always allowed for directories we can read)
+    } else {
+      if (fileStat.mode & 256) perms.push('r'); // read
+      if (fileStat.mode & 128) perms.push('w'); // write
+      if (fileStat.mode & 64) perms.push('a'); // append
+    }
+    if (perms.length > 0) {
+      facts.push(`perm=${perms.join('')}`);
+    }
+  }
+
+  return `${facts.join(';')}; ${fileStat.name}`;
 }
