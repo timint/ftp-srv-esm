@@ -10,9 +10,6 @@ export default {
     if (!this.fs.get) return this.reply(402, 'Not supported by file system');
     if (!this.fs.list) return this.reply(402, 'Not supported by file system');
 
-    // Check if data connection is established
-    if (!this.connector) return this.reply(425, 'Use PASV or PORT to establish data connection first');
-
     // Parse command arguments: extract options and path
     let path = '.';
     let showHidden = false;
