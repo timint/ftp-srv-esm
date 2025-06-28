@@ -31,5 +31,8 @@ export default {
     });
   },
   syntax: '{{cmd}}',
-  description: 'Initiate passive mode'
+  description: 'Initiate passive mode',
+  flags: {
+    feat: 'EPSV'
+  }
 };

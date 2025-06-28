@@ -10,8 +10,6 @@ export default {
     if (!this.fs.get) return this.reply(402, 'Not supported by file system');
     if (!this.fs.list) return this.reply(402, 'Not supported by file system');
 
-    const simple = command.directive === 'NLST';
-
     // Parse command arguments: extract options and path
     let path = '.';
     let showHidden = false;
