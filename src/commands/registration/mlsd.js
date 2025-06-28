@@ -47,7 +47,7 @@ export default {
 
       return this.reply({ raw: true, socket: this.connector.socket }, message);
     })
-    .then(() => this.reply(226, 'Directory send OK'))
+    .then(() => this.reply(226))
     .catch((err) => {
       if (err && err.name === 'TimeoutError') {
         log.error(err);

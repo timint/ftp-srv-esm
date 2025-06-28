@@ -5,7 +5,7 @@ import winston from 'winston';
 import PassiveConnector from '../../src/connector/passive.js';
 import { getNextPortFactory } from '../../src/helpers/find-port.js';
 
-describe.skip('Connector - Passive Mode //', function () {
+describe('Connector - Passive Mode //', function () {
   const host = '127.0.0.1';
   let mockConnection = {
     reply: () => Promise.resolve({}),
@@ -17,7 +17,8 @@ describe.skip('Connector - Passive Mode //', function () {
       transports: [new winston.transports.Console({ level: 'silly' })]
     }),
     commandSocket: {
-      remoteAddress: '::ffff:127.0.0.1'
+      //remoteAddress: '::ffff:127.0.0.1'
+      remoteAddress: '::1'
     },
     server: {
       url: '',
@@ -140,7 +141,7 @@ describe.skip('Connector - Passive Mode //', function () {
 
   it('Accepts connection', (done) => {
     let passive = new PassiveConnector(mockConnection);
-    return passive.setupServer()
+    passive.setupServer()
     .then(() => {
       expect(passive.dataServer).to.exist;
 
@@ -151,6 +152,8 @@ describe.skip('Connector - Passive Mode //', function () {
     .then(() => {
       expect(passive.dataSocket).to.exist;
       passive.end();
-    });
+      done();
+    })
+    .catch(done);
   });
 });

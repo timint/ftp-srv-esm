@@ -22,16 +22,14 @@ function ls(fileStat) {
   // Format date - if older than 6 months, show year; otherwise show time
   let dateStr;
   if (timeDiff < 6) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const month = months[mtime.getMonth()];
     const day = String(mtime.getDate()).padStart(2, ' ');
     const hours = String(mtime.getHours()).padStart(2, '0');
     const minutes = String(mtime.getMinutes()).padStart(2, '0');
     dateStr = `${month} ${day} ${hours}:${minutes}`;
   } else {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const month = months[mtime.getMonth()];
     const day = String(mtime.getDate()).padStart(2, ' ');
     const year = mtime.getFullYear();

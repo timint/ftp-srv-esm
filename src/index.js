@@ -6,14 +6,15 @@ import EventEmitter from 'events';
 
 import Connection from './connection.js';
 import { getNextPortFactory } from './helpers/find-port.js';
-const packageJson = JSON.parse(readFileSync(new URL('../package.json', import.meta.url)).toString());
+
+const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url)).toString());
 
 class FtpServer extends EventEmitter {
   constructor(options = {}) {
     super();
-    this.options = Object.assign({
+    this.options = {
       log: winston.createLogger({
-        name: packageJson.name,
+        name: `${pkg.name}/${pkg.version}`,
         silent: true,
         format: winston.format.simple(),
         transports: [new winston.transports.Console({ level: 'silly' })]
@@ -29,8 +30,9 @@ class FtpServer extends EventEmitter {
       greeting: null,
       tls: false,
       timeout: 0,
-      endOnProcessSignal: true
-    }, Object.fromEntries(Object.entries(options).filter(([_, v]) => v !== undefined)));
+      endOnProcessSignal: true,
+      ...options
+    };
 
     this._greeting = this.setupGreeting(this.options.greeting);
     this._features = this.setupFeaturesMessage();
@@ -65,7 +67,8 @@ class FtpServer extends EventEmitter {
       return connection.reply(220, ...greeting, features)
         .then(() => socket.resume());
     };
-    const serverOptions = Object.assign({}, this.isTLS ? this.options.tls : {}, {pauseOnConnect: true});
+
+    const serverOptions = { ...(this.isTLS ? this.options.tls : {}), pauseOnConnect: true };
 
     this.server = (this.isTLS ? tls : net).createServer(serverOptions, serverConnectionHandler);
     this.server.on('error', (err) => {
