@@ -83,7 +83,6 @@ const resolverFunction = (address) => {
   }
   return '127.0.0.1';
 };
-```
 
 new FtpSrv({pasv_hostname: resolverFunction});
 ```
@@ -91,6 +90,10 @@ new FtpSrv({pasv_hostname: resolverFunction});
 - A static IP address (ie. an external WAN **IP address** that the FTP server is bound to). In this case, only connections from localhost are handled differently returning `127.0.0.1` to the client.
 
 If not provided, the server will attempt to fetch and use the WAN IP for passive mode transfers.
+
+#### `wan_ip_check_url`
+The URL to use for automatic WAN IP detection when `pasv_hostname` is not provided. This is useful when deploying the server in different environments that may need alternative IP detection services.
+__Default:__ `"https://checkip.amazonaws.com"`
 
 #### `pasv_min`
 The starting port to accept passive connections.

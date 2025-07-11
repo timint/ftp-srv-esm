@@ -6,6 +6,7 @@ import EventEmitter from 'events';
 
 import Connection from './connection.js';
 import { getNextPortFactory } from './helpers/find-port.js';
+import { findWanIp } from './helpers/find-wan-ip.js';
 
 const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url)).toString());
 
@@ -23,6 +24,8 @@ class FtpServer extends EventEmitter {
       pasv_min: 1024,
       pasv_max: 65535,
       pasv_hostname: null,
+      wan_ip: null,
+      wan_ip_check_url: 'https://checkip.amazonaws.com',
       anonymous: false,
       list_format: 'ls',
       blacklist: [],
@@ -113,24 +116,25 @@ class FtpServer extends EventEmitter {
           this.log && this.log.error(`Error fetching WAN IP: ${err.message}`);
           this.log.warn('Passive connections not available.');
         }
+    this.log.info(`Listening for incoming connections on port "${this.url.port || (this.url.protocol === 'ftps:' ? 990 : 21)}" using protocol "${this.url.protocol.replace(/\W/g, '')}".`);
+
+    if (!this.options.wan_ip) {
+      this.log.warn('Missing option "wan_ip". Attempting to determine WAN IP automatically.');
+      try {
+        this.options.wan_ip = await findWanIp(this.options.wan_ip_check_url);
+        this.log && this.log.info(`WAN IP was determined to "${this.options.wan_ip}".`);
+      } catch (err) {
+        this.log && this.log.error(`Error fetching WAN IP: ${err.message}`);
       }
     }
 
     return new Promise((resolve, reject) => {
       this.server.once('error', reject);
-      this.server.listen(this.url.port, this.url.hostname, (err) => {
       // Handle default ports when URL.port returns empty string
       const port = this.url.port || (this.url.protocol === 'ftps:' ? 990 : 21);
+      this.server.listen(port, this.url.hostname, (err) => {
         this.server.removeListener('error', reject);
         if (err) return reject(err);
-        this.log.info('Listening', {
-          protocol: this.url.protocol.replace(/\W/g, ''),
-          ip: this.url.hostname,
-          port: this.url.port,
-          pasv_hostname: this.options.pasv_hostname,
-          pasv_min: this.options.pasv_min,
-          pasv_max: this.options.pasv_max
-        });
         resolve('Listening');
       });
     });
