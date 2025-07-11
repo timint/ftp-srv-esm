@@ -1,6 +1,6 @@
 {
   "name": "ftp-srv-esm",
-  "version": "5.0.0",
+  "version": "5.0.1",
   "description": "Modern, extensible FTP server (daemon) for Node.js with ESM support. Based on ftp-srv.",
   "keywords": ["ftp-srv-esm", "ftp", "ftp-srv", "ftp-server", "ftp-daemon", "ftpd", "ftpserver", "server", "daemon" ],
   "license": "MIT",
