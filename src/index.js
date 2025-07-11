@@ -119,6 +119,8 @@ class FtpServer extends EventEmitter {
     return new Promise((resolve, reject) => {
       this.server.once('error', reject);
       this.server.listen(this.url.port, this.url.hostname, (err) => {
+      // Handle default ports when URL.port returns empty string
+      const port = this.url.port || (this.url.protocol === 'ftps:' ? 990 : 21);
         this.server.removeListener('error', reject);
         if (err) return reject(err);
         this.log.info('Listening', {
