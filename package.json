@@ -26,19 +26,19 @@
     "verify": "eslint src/**/*.js test/**/*.js bin/**/*.js"
   },
   "dependencies": {
-    "@eslint/js": "^9.28.0",
+    "@eslint/js": "^9.30.1",
     "neoip": "^3.0.1",
     "winston": "^3.17.0",
     "yargs": "^18.0.0"
   },
   "devDependencies": {
-    "basic-ftp": "^5.0.5",
-    "chai": "^5.2.0",
-    "eslint": "^9.28.0",
+    "basic-ftp": "link:../basic-ftp",
+    "chai": "^5.2.1",
+    "eslint": "^9.30.1",
     "husky": "^9.1.7",
-    "lint-staged": "^16.1.0",
-    "mocha": "^11.6.0",
-    "sinon": "^20.0.0"
+    "lint-staged": "^16.1.2",
+    "mocha": "^11.7.1",
+    "sinon": "^21.0.0"
   },
   "release": {
     "verifyConditions": "condition-circle",
