@@ -1,7 +1,7 @@
 # ftp-srv-esm
 
 Modern, extensible FTP Server. Based on [ftp-srv](https://github.com/QuorumDMS/ftp-srv) 4.6.3.
-How is it different from v4? Code has been rewritten for ECMAScript Modules (ESM). Several outdated and/or vulnerable npm dependencies has been updated or removed.
+How is it different from v4? Code has been rewritten for ECMAScript Modules (ESM). Deprecated, outdated and vulnerable npm dependencies has been removed, replaced and updated.
 
 ## Features
 - Extensible [file systems](#file-system) per connection
@@ -110,6 +110,7 @@ __Default:__ `null`
 
 #### `tls`
 Node [TLS secure context object](https://nodejs.org/api/tls.html#tls_tls_createsecurecontext_options) used for implicit (`ftps` protocol) or explicit (`AUTH TLS`) connections.
+__Example:__ { key: readFileSync('server.key'), cert: readFileSync('server.crt'), ca: readFileSync('server.csr') }
 __Default:__ `false`
 
 #### `anonymous`

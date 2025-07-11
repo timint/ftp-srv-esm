@@ -14,7 +14,7 @@ const server = new FtpServer({
     format: winston.format.simple(), // Added format for console output
     transports: [new winston.transports.Console({ level: 'silly' })]
   }),
-  url: 'ftp://127.0.0.1:8880',
+  url: 'ftp://0.0.0.0:21',
   //pasv_hostname: '', // WAN IP will be used if not set
   pasv_min: 8881,
   greeting: ['Welcome! Drop your files, not your expectations.'],
@@ -23,8 +23,8 @@ const server = new FtpServer({
     cert: readFileSync(`test/cert/server.crt`),
     ca: readFileSync(`test/cert/server.csr`)
   },
-  //list_format: 'ls', // Defaults to 'ls' for standard Unix-like format
-  list_format: 'ep', // 'ep' format for EPLF (Extended Path Listing Format)
+  list_format: 'ls', // Defaults to 'ls' for standard Unix-like format
+  //list_format: 'ep', // Force Extended Path Listing Format (EPLF)
   anonymous: true
 });
 

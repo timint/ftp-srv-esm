@@ -37,6 +37,15 @@ class FtpServer extends EventEmitter {
       ...options
     };
 
+    // Backwards compatibility with pasv_url
+    if (this.options.pasv_url) {
+      this.log.warn('Option "pasv_url" is deprecated. Use "pasv_hostname" and "pasv_hostname" instead.');
+      if (!this.options.pasv_hostname) {
+        this.options.pasv_hostname = this.options.pasv_url;
+        delete this.options.pasv_url;
+      }
+    }
+
     this._greeting = this.setupGreeting(this.options.greeting);
     this._features = this.setupFeaturesMessage();
 
@@ -99,23 +108,6 @@ class FtpServer extends EventEmitter {
   }
 
   async listen() {
-    if (!this.options.pasv_hostname) {
-      if (this.options.pasv_url) {
-        this.options.pasv_hostname = this.options.pasv_url;
-      } else {
-        this.log.warn('Passive hostname is not set. Attempting to determine WAN IP instead.');
-        try {
-          const response = await fetch('https://checkip.amazonaws.com');
-          if (!response.ok) {
-            throw new Error(`Unexpected response: ${response.status} ${response.statusText}`);
-          }
-          const wanIp = (await response.text()).trim();
-          this.log && this.log.info(`Detected WAN IP: ${wanIp}`);
-          this.options.pasv_hostname = wanIp;
-        } catch (err) {
-          this.log && this.log.error(`Error fetching WAN IP: ${err.message}`);
-          this.log.warn('Passive connections not available.');
-        }
     this.log.info(`Listening for incoming connections on port "${this.url.port || (this.url.protocol === 'ftps:' ? 990 : 21)}" using protocol "${this.url.protocol.replace(/\W/g, '')}".`);
 
     if (!this.options.wan_ip) {
@@ -126,6 +118,11 @@ class FtpServer extends EventEmitter {
       } catch (err) {
         this.log && this.log.error(`Error fetching WAN IP: ${err.message}`);
       }
+    }
+
+    if (!this.options.pasv_hostname) {
+      this.options.pasv_hostname = this.options.wan_ip || this.url.hostname || 'localhost';
+      this.log.warn(`Missing option "pasv_hostname". Defaulting to "${this.options.pasv_hostname}".`);
     }
 
     return new Promise((resolve, reject) => {
